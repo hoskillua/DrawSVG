@@ -239,26 +239,50 @@ void HardwareRenderer::draw_group( Group& group ) {
 
 void HardwareRenderer::rasterize_point(float x, float y, Color color) {
   
-  // Task 1: 
-  // Implement point rasterization
-
+    glBegin(GL_POINTS);
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(x,y);
+    glEnd();
 }
 
 void HardwareRenderer::rasterize_line(float x0, float y0,
                                       float x1, float y1, 
                                       Color color) {
 
-  // Task 1: 
-  // Implement line rasterization
+    //Enabling Blending to get smooth lines (Anti-Aliasing)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+    glBegin(GL_LINES);
 
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(x0, y0);
+    glVertex2f(x1, y1);
+    glEnd();
 }
 
 void HardwareRenderer::rasterize_triangle(float x0, float y0,
                                           float x1, float y1, 
                                           float x2, float y2, 
                                           Color color) {
-  // Task 1: 
-  // Implement triangle rasterization
+
+    //Enabling Blending to get smooth triangles (Anti-Aliasing)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+    glBegin(GL_TRIANGLES);
+
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(x0, y0);
+    glVertex2f(x1, y1);
+    glVertex2f(x2, y2);
+    glEnd();
 
 }
 

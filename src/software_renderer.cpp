@@ -4,31 +4,46 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
+#define RasterDetectStep 0.2
+#define Fzero 1e-2
 #include "triangulation.h"
 
 using namespace std;
 
-namespace CMU462 {
 
+namespace CMU462
+{
 
 	// Implements SoftwareRenderer //
 
-	void SoftwareRendererImp::draw_svg(SVG& svg) {
+	void SoftwareRendererImp::draw_svg(SVG& svg)
+	{
 
 		// set top level transformation
 		transformation = svg_2_screen;
 
 		// draw all elements
-		for (size_t i = 0; i < svg.elements.size(); ++i) {
+		for (size_t i = 0; i < svg.elements.size(); ++i)
+		{
 			draw_element(svg.elements[i]);
 		}
 
 		// draw canvas outline
-		Vector2D a = transform(Vector2D(0, 0)); a.x--; a.y--;
-		Vector2D b = transform(Vector2D(svg.width, 0)); b.x++; b.y--;
-		Vector2D c = transform(Vector2D(0, svg.height)); c.x--; c.y++;
-		Vector2D d = transform(Vector2D(svg.width, svg.height)); d.x++; d.y++;
+		Vector2D a = transform(Vector2D(0, 0));
+		a.x--;
+		a.y--;
+		Vector2D b = transform(Vector2D(svg.width, 0));
+		b.x++;
+		b.y--;
+		Vector2D c = transform(Vector2D(0, svg.height));
+		c.x--;
+		c.y++;
+		Vector2D d = transform(Vector2D(svg.width, svg.height));
+		d.x++;
+		d.y++;
 
 		rasterize_line(a.x, a.y, b.x, b.y, Color::Black);
 		rasterize_line(a.x, a.y, c.x, c.y, Color::Black);
@@ -37,34 +52,35 @@ namespace CMU462 {
 
 		// resolve and send to render target
 		resolve();
-
 	}
 
-	void SoftwareRendererImp::set_sample_rate(size_t sample_rate) {
+	void SoftwareRendererImp::set_sample_rate(size_t sample_rate)
+	{
 
-		// Task 4: 
+		// Task 4:
 		// You may want to modify this for supersampling support
 		this->sample_rate = sample_rate;
-
 	}
 
 	void SoftwareRendererImp::set_render_target(unsigned char* render_target,
-		size_t width, size_t height) {
+		size_t width, size_t height)
+	{
 
-		// Task 4: 
+		// Task 4:
 		// You may want to modify this for supersampling support
 		this->render_target = render_target;
 		this->target_w = width;
 		this->target_h = height;
-
 	}
 
-	void SoftwareRendererImp::draw_element(SVGElement* element) {
+	void SoftwareRendererImp::draw_element(SVGElement* element)
+	{
 
 		// Task 5 (part 1):
 		// Modify this to implement the transformation stack
 
-		switch (element->type) {
+		switch (element->type)
+		{
 		case POINT:
 			draw_point(static_cast<Point&>(*element));
 			break;
@@ -92,34 +108,35 @@ namespace CMU462 {
 		default:
 			break;
 		}
-
 	}
-
 
 	// Primitive Drawing //
 
-	void SoftwareRendererImp::draw_point(Point& point) {
+	void SoftwareRendererImp::draw_point(Point& point)
+	{
 
 		Vector2D p = transform(point.position);
 		rasterize_point(p.x, p.y, point.style.fillColor);
-
 	}
 
-	void SoftwareRendererImp::draw_line(Line& line) {
+	void SoftwareRendererImp::draw_line(Line& line)
+	{
 
 		Vector2D p0 = transform(line.from);
 		Vector2D p1 = transform(line.to);
 		rasterize_line(p0.x, p0.y, p1.x, p1.y, line.style.strokeColor);
-
 	}
 
-	void SoftwareRendererImp::draw_polyline(Polyline& polyline) {
+	void SoftwareRendererImp::draw_polyline(Polyline& polyline)
+	{
 
 		Color c = polyline.style.strokeColor;
 
-		if (c.a != 0) {
+		if (c.a != 0)
+		{
 			int nPoints = polyline.points.size();
-			for (int i = 0; i < nPoints - 1; i++) {
+			for (int i = 0; i < nPoints - 1; i++)
+			{
 				Vector2D p0 = transform(polyline.points[(i + 0) % nPoints]);
 				Vector2D p1 = transform(polyline.points[(i + 1) % nPoints]);
 				rasterize_line(p0.x, p0.y, p1.x, p1.y, c);
@@ -127,7 +144,8 @@ namespace CMU462 {
 		}
 	}
 
-	void SoftwareRendererImp::draw_rect(Rect& rect) {
+	void SoftwareRendererImp::draw_rect(Rect& rect)
+	{
 
 		Color c;
 
@@ -144,36 +162,40 @@ namespace CMU462 {
 
 		// draw fill
 		c = rect.style.fillColor;
-		if (c.a != 0) {
+		if (c.a != 0)
+		{
 			rasterize_triangle(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, c);
 			rasterize_triangle(p2.x, p2.y, p1.x, p1.y, p3.x, p3.y, c);
 		}
 
 		// draw outline
 		c = rect.style.strokeColor;
-		if (c.a != 0) {
+		if (c.a != 0)
+		{
 			rasterize_line(p0.x, p0.y, p1.x, p1.y, c);
 			rasterize_line(p1.x, p1.y, p3.x, p3.y, c);
 			rasterize_line(p3.x, p3.y, p2.x, p2.y, c);
 			rasterize_line(p2.x, p2.y, p0.x, p0.y, c);
 		}
-
 	}
 
-	void SoftwareRendererImp::draw_polygon(Polygon& polygon) {
+	void SoftwareRendererImp::draw_polygon(Polygon& polygon)
+	{
 
 		Color c;
 
 		// draw fill
 		c = polygon.style.fillColor;
-		if (c.a != 0) {
+		if (c.a != 0)
+		{
 
 			// triangulate
 			vector<Vector2D> triangles;
 			triangulate(polygon, triangles);
 
 			// draw as triangles
-			for (size_t i = 0; i < triangles.size(); i += 3) {
+			for (size_t i = 0; i < triangles.size(); i += 3)
+			{
 				Vector2D p0 = transform(triangles[i + 0]);
 				Vector2D p1 = transform(triangles[i + 1]);
 				Vector2D p2 = transform(triangles[i + 2]);
@@ -183,9 +205,11 @@ namespace CMU462 {
 
 		// draw outline
 		c = polygon.style.strokeColor;
-		if (c.a != 0) {
+		if (c.a != 0)
+		{
 			int nPoints = polygon.points.size();
-			for (int i = 0; i < nPoints; i++) {
+			for (int i = 0; i < nPoints; i++)
+			{
 				Vector2D p0 = transform(polygon.points[(i + 0) % nPoints]);
 				Vector2D p1 = transform(polygon.points[(i + 1) % nPoints]);
 				rasterize_line(p0.x, p0.y, p1.x, p1.y, c);
@@ -193,13 +217,14 @@ namespace CMU462 {
 		}
 	}
 
-	void SoftwareRendererImp::draw_ellipse(Ellipse& ellipse) {
+	void SoftwareRendererImp::draw_ellipse(Ellipse& ellipse)
+	{
 
-		// Extra credit 
-
+		// Extra credit
 	}
 
-	void SoftwareRendererImp::draw_image(Image& image) {
+	void SoftwareRendererImp::draw_image(Image& image)
+	{
 
 		Vector2D p0 = transform(image.position);
 		Vector2D p1 = transform(image.position + image.dimension);
@@ -207,42 +232,47 @@ namespace CMU462 {
 		rasterize_image(p0.x, p0.y, p1.x, p1.y, image.tex);
 	}
 
-	void SoftwareRendererImp::draw_group(Group& group) {
+	void SoftwareRendererImp::draw_group(Group& group)
+	{
 
-		for (size_t i = 0; i < group.elements.size(); ++i) {
+		for (size_t i = 0; i < group.elements.size(); ++i)
+		{
 			draw_element(group.elements[i]);
 		}
-
 	}
 
 	// Rasterization //
 
-	// The input arguments in the rasterization functions 
+	// The input arguments in the rasterization functions
 	// below are all defined in screen space coordinates
 
-	void SoftwareRendererImp::rasterize_point(float x, float y, Color color) {
+	void SoftwareRendererImp::rasterize_point(float x, float y, Color color)
+	{
 
 		// fill in the nearest pixel
 		int sx = (int)floor(x);
 		int sy = (int)floor(y);
 
 		// check bounds
-		if (sx < 0 || sx >= target_w) return;
-		if (sy < 0 || sy >= target_h) return;
+		if (sx < 0 || sx >= target_w)
+			return;
+		if (sy < 0 || sy >= target_h)
+			return;
 
 		// fill sample - NOT doing alpha blending!
 		render_target[4 * (sx + sy * target_w)] = (uint8_t)(color.r * 255);
 		render_target[4 * (sx + sy * target_w) + 1] = (uint8_t)(color.g * 255);
 		render_target[4 * (sx + sy * target_w) + 2] = (uint8_t)(color.b * 255);
 		render_target[4 * (sx + sy * target_w) + 3] = (uint8_t)(color.a * 255);
-
 	}
 
 	void SoftwareRendererImp::rasterize_line(float x0, float y0,
 		float x1, float y1,
-		Color color) {
-		
-		bool antialising = true;
+		Color color)
+	{
+
+
+		bool antialising = false;
 		float swidth = 1;
 		float ewidth = 1;
 
@@ -267,7 +297,6 @@ namespace CMU462 {
 
 			rasterize_triangle(x00, y00, x01, y01, x10, y10, color);
 			rasterize_triangle(x11, y11, x01, y01, x10, y10, color);
-
 		}
 		else
 		{
@@ -349,28 +378,214 @@ namespace CMU462 {
 		}
 	}
 
+	bool SoftwareRendererImp::point_in_traingle(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		float i, float j)
+	{
+		float p1 = (i - x0) * (y1 - y0) - (j - y0) * (x1 - x0);
+		float p2 = (i - x1) * (y2 - y1) - (j - y1) * (x2 - x1);
+		float p3 = (i - x2) * (y0 - y2) - (j - y2) * (x0 - x2);
+		return (p1 >= -Fzero && p2 >= -Fzero && p3 >= -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero);
+	}
+
+	void SoftwareRendererImp::filldivision(
+		Color color,
+		int xmin, int ymin,
+		int xmax, int ymax)
+	{
+		for (int i = (xmin); i < (xmax)+1; i++)
+		{
+			for (int j = (ymin); j < (ymax)+1; j++)
+			{
+				render_target[4 * (i + j * target_w)] = (uint8_t)(color.r * 255);
+				render_target[4 * (i + j * target_w) + 1] = (uint8_t)(color.g * 255);
+				render_target[4 * (i + j * target_w) + 2] = (uint8_t)(color.b * 255);
+				render_target[4 * (i + j * target_w) + 3] = (uint8_t)(color.a * 255);
+			}
+		}
+	}
+
+	bool SoftwareRendererImp::TriangleRectFill(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		float x00, float y00,
+		float x11, float y11)
+	{
+
+		return point_in_traingle(x0, y0, x1, y1, x2, y2, x00, y00)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x00, y11)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11, y00)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11, y11);
+	}
+
+	bool SoftwareRendererImp::LineIntersectH(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		float x3, float y3)
+	{
+		if (abs((y0 - y1)) * 200 < abs(x0 - x1))
+			return false;
+		else if (abs((x1 - x0)) * 200 < abs(y1 - y0))
+			return (x2 <= x0 && x0 <= x3);
+
+		float m0 = (y1 - y0) / (x1 - x0);
+		float c0 = y0 - m0 * x0;
+		// m0 x + c0
+		float c2 = y2;
+		// m2 x + c2
+		float x = (c2 - c0) / (m0);
+
+		return (min(x0, x1) <= x && x <= max(x0, x1)
+			&& x2 <= x && x <= x3);
+	}
+	bool SoftwareRendererImp::LineIntersectV(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		float x3, float y3)
+	{
+		if (abs((x1 - x0)) * 200 < abs(y1 - y0))
+			return false;
+		else if (abs((y0 - y1)) * 200 < abs(x0 - x1))
+			return (y2 <= y0 && y0 <= y3);
+		/// YET
+		float m0 = (x1 - x0) / (y1 - y0);
+		float c0 = x0 - m0 * y0;
+		// m0 y + c0
+		float c2 = x2;
+		// c2
+		float y = (c2 - c0) / (m0);
+
+		return (min(y0, y1) <= y && y <= max(y0, y1)
+			&& y2 <= y && y <= y3);
+	}
+
+
+	bool SoftwareRendererImp::TriangleRectIntersect(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		float x00, float y00,
+		float x11, float y11)
+	{
+		return LineIntersectV(x0, y0, x1, y1, x00, y00, x00, y11)
+			|| LineIntersectH(x0, y0, x1, y1, x00, y00, x11, y00)
+			|| LineIntersectH(x0, y0, x1, y1, x00, y11, x11, y11)
+			|| LineIntersectV(x0, y0, x1, y1, x11, y00, x11, y11)
+			|| LineIntersectV(x2, y2, x1, y1, x00, y00, x00, y11)
+			|| LineIntersectH(x2, y2, x1, y1, x00, y00, x11, y00)
+			|| LineIntersectH(x2, y2, x1, y1, x00, y11, x11, y11)
+			|| LineIntersectV(x2, y2, x1, y1, x11, y00, x11, y11)
+			|| LineIntersectV(x2, y2, x0, y0, x00, y00, x00, y11)
+			|| LineIntersectH(x2, y2, x0, y0, x00, y00, x11, y00)
+			|| LineIntersectH(x2, y2, x0, y0, x00, y11, x11, y11)
+			|| LineIntersectV(x2, y2, x0, y0, x11, y00, x11, y11)
+			|| (x00 <= x0 && x0 <= x11 && y00 <= y0&& y0 <= y11
+				&& x00 <= x1&& x1 <= x11&& y00 <= y1&& y1 <= y11
+				&& x00 <= x2&& x2 <= x11&& y00 <= y2&& y2 <= y11);
+
+	}
+
+	void SoftwareRendererImp::divide_screen2x2_rasterize_tr(float x0, float y0,
+		float x1, float y1,
+		float x2, float y2,
+		Color color,
+		int xmin, int ymin,
+		int xmax, int ymax, float threshold)
+	{
+		if ((xmax + 1 - xmin) * (ymax + 1 - ymin) <= threshold * threshold)
+		{
+			if (/*!(rand() % 1000) || */1)
+			{
+				for (int i = (xmin); i < (xmax)+1; i++)
+				{
+					for (int j = (ymin); j < (ymax)+1; j++)
+					{
+						if (point_in_traingle(x0, y0, x1, y1, x2, y2, i, j))
+						{
+							render_target[4 * (i + j * target_w)] = (uint8_t)(color.r * 255);
+							render_target[4 * (i + j * target_w) + 1] = (uint8_t)(color.g * 255);
+							render_target[4 * (i + j * target_w) + 2] = (uint8_t)(color.b * 255);
+							render_target[4 * (i + j * target_w) + 3] = (uint8_t)(color.a * 255);
+						}
+					}
+				}
+
+				/*rasterize_line(xmin, ymin, xmax, ymin, { 1,0,0,0.4 });
+				rasterize_line(xmin, ymin, xmin, ymax, { 1,0,0,0.4 });
+				rasterize_line(xmax, ymin, xmax, ymax, { 1,0,0,0.4 });
+				rasterize_line(xmin, ymax, xmax, ymax, { 1,0,0,0.4 });*/
+			}
+
+		}
+		else
+		{
+			if (xmax - xmin > ymax - ymin)
+			{
+				float xmid = (xmax + xmin) / 2;
+
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymin, xmid, ymax))
+					filldivision(color, xmin, ymin, xmid, ymax);
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymin, xmid, ymax))
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmid, ymax, threshold);
+
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmid + 1, ymin, xmax, ymax))
+					filldivision(color, xmid + 1, ymin, xmax, ymax);
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmid + 1, ymin, xmax, ymax))
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmid + 1, ymin, xmax, ymax, threshold);
+
+			}
+			else
+			{
+				float ymid = (ymax + ymin) / 2;
+
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymin, xmax, ymid))
+				{
+					filldivision(color, xmin, ymin, xmax, ymid);
+				}
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymin, xmax, ymid))
+				{
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmax, ymid, threshold);
+				}
+
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
+				{
+					filldivision(color, xmin, ymid + 1, xmax, ymax);
+				}
+
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
+				{
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymid + 1, xmax, ymax, threshold);
+				}
+
+			}
+		}
+	}
+
+
+
 	void SoftwareRendererImp::rasterize_triangle(float x0, float y0,
 		float x1, float y1,
 		float x2, float y2,
-		Color color) {
-		
-		float xmin, ymin, xmax, ymax;
-		xmin = max(min(x0, min(x1, x2)), 0.01f) + 0.5;
-		ymin = max(min(y0, min(y1, y2)), 0.01f);
-		xmax = min(max(x0, max(x1, x2)), target_w - 0.99f);
-		ymax = min(max(y0, max(y1, y2)), target_h - 0.99f);
-		float ysize = ymax - ymin;
-		float xsize = xmax - xmin;
-		while()
+		Color color)
+	{
 
-		for (int i = (xmin+0.5); i < (xmax + 0.5); i++)
+		float xmin, ymin, xmax, ymax;
+		xmin = max(min(x0, min(x1, x2)), 0.01f);
+		ymin = max(min(y0, min(y1, y2)), 0.01f);
+		xmax = min(max(x0, max(x1, x2)), target_w + 0.01f);
+		ymax = min(max(y0, max(y1, y2)), target_h + 0.01f);
+
+		divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmax, ymax, 16);
+		
+
+		/*for (int i = (xmin); i < (xmax); i++)
 		{
-			for (int j = (ymin+0.5); j < (ymax + 0.5); j++)
+			for (int j = (ymin); j < (ymax); j++)
 			{
 				float p1 = (i + 0.5f - x0) * (y1 - y0) - (j + 0.5f - y0) * (x1 - x0);
 				float p2 = (i + 0.5f - x1) * (y2 - y1) - (j + 0.5f - y1) * (x2 - x1);
 				float p3 = (i + 0.5f - x2) * (y0 - y2) - (j + 0.5f - y2) * (x0 - x2);
-				if ((p1 >= -1e-2 && p2 >= -1e-2 && p3 >= -1e-2) || (p1 <= 1e-2 && p2 <= 1e-2 && p3 <= 1e-2))
+				if ((p1 >= -Fzero && p2 >= -Fzero && p3 >= -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero))
 				{
 					render_target[4 * (i + j * target_w)] = (uint8_t)(color.r * 255);
 					render_target[4 * (i + j * target_w) + 1] = (uint8_t)(color.g * 255);
@@ -378,26 +593,26 @@ namespace CMU462 {
 					render_target[4 * (i + j * target_w) + 3] = (uint8_t)(color.a * 255);
 				}
 			}
-		}
+		}*/
+
 	}
 
 	void SoftwareRendererImp::rasterize_image(float x0, float y0,
 		float x1, float y1,
-		Texture& tex) {
-		// Task 6: 
+		Texture& tex)
+	{
+		// Task 6:
 		// Implement image rasterization
-
 	}
 
 	// resolve samples to render target
-	void SoftwareRendererImp::resolve(void) {
+	void SoftwareRendererImp::resolve(void)
+	{
 
-		// Task 4: 
+		// Task 4:
 		// Implement supersampling
 		// You may also need to modify other functions marked with "Task 4".
 		return;
-
 	}
-
 
 } // namespace CMU462

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include <bitset>
 
 #include "CMU462.h"
 #include "texture.h"
@@ -119,11 +120,50 @@ class SoftwareRendererImp : public SoftwareRenderer {
                        float x1, float y1,
                        Color color);
 
+  void divide_screen2x2_rasterize_tr(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      Color color,
+      int xmin, int ymin,
+      int xmax, int ymax, float threshold);
+
+  bool point_in_traingle(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      float i, float j);
+
+  bool TriangleRectIntersect(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      float x00, float y00,
+      float x11, float y11);
+
+  bool LineIntersectH(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      float x3, float y3);
+  bool LineIntersectV(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      float x3, float y3);
+
+  bool TriangleRectFill(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      float x00, float y00,
+      float x11, float y11);
+
+  void filldivision(
+      Color color,
+      int xmin, int ymin,
+      int xmax, int ymax);
+
   // rasterize a triangle
   void rasterize_triangle( float x0, float y0,
                            float x1, float y1,
                            float x2, float y2,
                            Color color );
+
 
   // rasterize an image
   void rasterize_image( float x0, float y0,
@@ -132,6 +172,10 @@ class SoftwareRendererImp : public SoftwareRenderer {
 
   // resolve samples to render target
   void resolve( void );
+
+  std::vector<unsigned char> sample_buffer; int w; int h;
+  void fill_sample(int sx, int sy, const Color& c);
+  void fill_pixel(int x, int y, const Color& c);
 
 }; // class SoftwareRendererImp
 
@@ -191,6 +235,14 @@ class SoftwareRendererRef : public SoftwareRenderer {
   void rasterize_line( float x0, float y0,
                        float x1, float y1,
                        Color color);
+
+  //
+  void divide_screen2x2_rasterize_tr(float x0, float y0,
+      float x1, float y1,
+      float x2, float y2,
+      Color color,
+      float xmin, float ymin,
+      float xmax, float ymax, float threshold);
 
   // rasterize a triangle
   void rasterize_triangle( float x0, float y0,

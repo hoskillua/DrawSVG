@@ -32,6 +32,7 @@ class SoftwareRenderer : public SVGRenderer {
   // Clear render target
   inline void clear_target() {
     memset(render_target, 255, 4 * target_w * target_h);
+
   }
 
   // Set texture sampler
@@ -173,9 +174,11 @@ class SoftwareRendererImp : public SoftwareRenderer {
   // resolve samples to render target
   void resolve( void );
 
-  std::vector<unsigned char> sample_buffer; int w; int h;
-  void fill_sample(int sx, int sy, const Color& c);
-  void fill_pixel(int x, int y, const Color& c);
+  uint8_t sample_buffer[4*16*2000*1000]; int w; int h;
+
+  inline void clear_sample() {
+    memset(sample_buffer, 255, 4 * 16 * 2000 * 1000);
+  }
 
 }; // class SoftwareRendererImp
 

@@ -68,6 +68,7 @@ namespace CMU462
 
 		// Task 4:
 		// You may want to modify this for supersampling support
+
 		this->render_target = render_target;
 		this->target_w = width;
 		this->target_h = height;
@@ -77,8 +78,9 @@ namespace CMU462
 	{
 
 		// Task 5 (part 1):
-		// Modify this to implement the transformation stack
-
+		// Modify this to implement the transformation stackS
+		Matrix3x3 Temp = transformation;
+		transformation = transformation * element->transform;
 		switch (element->type)
 		{
 		case POINT:
@@ -108,6 +110,7 @@ namespace CMU462
 		default:
 			break;
 		}
+		transformation = Temp;
 	}
 
 	// Primitive Drawing //
@@ -260,10 +263,22 @@ namespace CMU462
 			return;
 
 		// fill sample - NOT doing alpha blending!
-		render_target[4 * (sx + sy * target_w)] = (uint8_t)(color.r * 255);
-		render_target[4 * (sx + sy * target_w) + 1] = (uint8_t)(color.g * 255);
-		render_target[4 * (sx + sy * target_w) + 2] = (uint8_t)(color.b * 255);
-		render_target[4 * (sx + sy * target_w) + 3] = (uint8_t)(color.a * 255);
+		for (int i = 0; i < sample_rate; i++)
+			for (int j = 0; j < sample_rate; j++)
+			{
+				sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate)] =
+					color.a * (uint8_t)(color.r * 255) +
+					(1 - color.a) * sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate)];
+				sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 1] =
+					color.a * (uint8_t)(color.g * 255) +
+					(1 - color.a) * sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 1];
+				sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 2] =
+					color.a * (uint8_t)(color.b * 255) +
+					(1 - color.a) * sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 2];
+				sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 3] =
+					color.a * (uint8_t)(color.a * 255) +
+					(1 - color.a) * sample_buffer[4 * ((sx * sample_rate + i) + (sy * sample_rate + j) * target_w * sample_rate) + 3];
+			}
 	}
 
 	void SoftwareRendererImp::rasterize_line(float x0, float y0,
@@ -272,9 +287,9 @@ namespace CMU462
 	{
 
 
-		bool antialising = false;
-		float swidth = 1;
-		float ewidth = 1;
+		bool antialising = true;
+		float swidth = 0.6;
+		float ewidth = 0.6;
 
 		swidth = abs(swidth);
 		ewidth = abs(ewidth);
@@ -282,9 +297,10 @@ namespace CMU462
 		float m = (y1 - y0) / (x1 - x0);
 		if (swidth < 0.5 && ewidth < 0.5)
 			return;
-		else if (swidth > 1.5 || ewidth > 1.5)
+		else if (swidth > 1.1 || ewidth > 1.1 || sample_rate > 1)
 		{
 			float x00, x01, x10, x11, y00, y01, y10, y11;
+
 			float theta = atan2(y1 - y0, x1 - x0);
 			x00 = x0 + sin(theta) * swidth;
 			y00 = y0 - cos(theta) * swidth;
@@ -383,9 +399,10 @@ namespace CMU462
 		float x2, float y2,
 		float i, float j)
 	{
-		float p1 = (i - x0) * (y1 - y0) - (j - y0) * (x1 - x0);
-		float p2 = (i - x1) * (y2 - y1) - (j - y1) * (x2 - x1);
-		float p3 = (i - x2) * (y0 - y2) - (j - y2) * (x0 - x2);
+		float step = 0.5 / sample_rate;
+		float p1 = (i + step - x0) * (y1 - y0) - (j + step - y0) * (x1 - x0);
+		float p2 = (i + step - x1) * (y2 - y1) - (j + step - y1) * (x2 - x1);
+		float p3 = (i + step - x2) * (y0 - y2) - (j + step - y2) * (x0 - x2);
 		return (p1 >= -Fzero && p2 >= -Fzero && p3 >= -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero);
 	}
 
@@ -394,14 +411,14 @@ namespace CMU462
 		int xmin, int ymin,
 		int xmax, int ymax)
 	{
-		for (int i = (xmin); i < (xmax)+1; i++)
+		for (int i = (xmin)*sample_rate; i < (xmax + 1) * sample_rate; i++)
 		{
-			for (int j = (ymin); j < (ymax)+1; j++)
+			for (int j = (ymin)*sample_rate; j < (ymax + 1) * sample_rate; j++)
 			{
-				render_target[4 * (i + j * target_w)] = (uint8_t)(color.r * 255);
-				render_target[4 * (i + j * target_w) + 1] = (uint8_t)(color.g * 255);
-				render_target[4 * (i + j * target_w) + 2] = (uint8_t)(color.b * 255);
-				render_target[4 * (i + j * target_w) + 3] = (uint8_t)(color.a * 255);
+				sample_buffer[4 * (i + j * target_w * sample_rate)] = (uint8_t)(color.r * 255);
+				sample_buffer[4 * (i + j * target_w * sample_rate) + 1] = (uint8_t)(color.g * 255);
+				sample_buffer[4 * (i + j * target_w * sample_rate) + 2] = (uint8_t)(color.b * 255);
+				sample_buffer[4 * (i + j * target_w * sample_rate) + 3] = (uint8_t)(color.a * 255);
 			}
 		}
 	}
@@ -413,10 +430,10 @@ namespace CMU462
 		float x11, float y11)
 	{
 
-		return point_in_traingle(x0, y0, x1, y1, x2, y2, x00, y00)
-			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x00, y11)
-			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11, y00)
-			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11, y11);
+		return point_in_traingle(x0, y0, x1, y1, x2, y2, x00 - 0.5 / sample_rate, y00 - 0.5 / sample_rate)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x00 - 0.5 / sample_rate, y11 - 0.5 / sample_rate)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11 - 0.5 / sample_rate, y00 - 0.5 / sample_rate)
+			&& point_in_traingle(x0, y0, x1, y1, x2, y2, x11 - 0.5 / sample_rate, y11 - 0.5 / sample_rate);
 	}
 
 	bool SoftwareRendererImp::LineIntersectH(float x0, float y0,
@@ -479,9 +496,9 @@ namespace CMU462
 			|| LineIntersectH(x2, y2, x0, y0, x00, y00, x11, y00)
 			|| LineIntersectH(x2, y2, x0, y0, x00, y11, x11, y11)
 			|| LineIntersectV(x2, y2, x0, y0, x11, y00, x11, y11)
-			|| (x00 <= x0 && x0 <= x11 && y00 <= y0&& y0 <= y11
-				&& x00 <= x1&& x1 <= x11&& y00 <= y1&& y1 <= y11
-				&& x00 <= x2&& x2 <= x11&& y00 <= y2&& y2 <= y11);
+			|| (x00 <= x0 && x0 <= x11 && y00 <= y0 && y0 <= y11
+				&& x00 <= x1 && x1 <= x11 && y00 <= y1 && y1 <= y11
+				&& x00 <= x2 && x2 <= x11 && y00 <= y2 && y2 <= y11);
 
 	}
 
@@ -492,28 +509,23 @@ namespace CMU462
 		int xmin, int ymin,
 		int xmax, int ymax, float threshold)
 	{
-		if ((xmax + 1 - xmin) * (ymax + 1 - ymin) <= threshold * threshold)
+		if ((xmax - xmin) * (ymax - ymin) <= threshold * threshold)
 		{
 			if (/*!(rand() % 1000) || */1)
 			{
-				for (int i = (xmin); i < (xmax)+1; i++)
+				for (int i = (xmin - 1) * sample_rate; i < (xmax + 1) * sample_rate; i++)
 				{
-					for (int j = (ymin); j < (ymax)+1; j++)
+					for (int j = (ymin - 1) * sample_rate; j < (ymax + 1) * sample_rate; j++)
 					{
-						if (point_in_traingle(x0, y0, x1, y1, x2, y2, i, j))
+						if (point_in_traingle(x0, y0, x1, y1, x2, y2, i / ((float)sample_rate), j / ((float)sample_rate)))
 						{
-							render_target[4 * (i + j * target_w)] = (uint8_t)(color.r * 255);
-							render_target[4 * (i + j * target_w) + 1] = (uint8_t)(color.g * 255);
-							render_target[4 * (i + j * target_w) + 2] = (uint8_t)(color.b * 255);
-							render_target[4 * (i + j * target_w) + 3] = (uint8_t)(color.a * 255);
+							sample_buffer[4 * (i + j * target_w * sample_rate)] = (uint8_t)(color.r * 255);
+							sample_buffer[4 * (i + j * target_w * sample_rate) + 1] = (uint8_t)(color.g * 255);
+							sample_buffer[4 * (i + j * target_w * sample_rate) + 2] = (uint8_t)(color.b * 255);
+							sample_buffer[4 * (i + j * target_w * sample_rate) + 3] = (uint8_t)(color.a * 255);
 						}
 					}
 				}
-
-				/*rasterize_line(xmin, ymin, xmax, ymin, { 1,0,0,0.4 });
-				rasterize_line(xmin, ymin, xmin, ymax, { 1,0,0,0.4 });
-				rasterize_line(xmax, ymin, xmax, ymax, { 1,0,0,0.4 });
-				rasterize_line(xmin, ymax, xmax, ymax, { 1,0,0,0.4 });*/
 			}
 
 		}
@@ -539,23 +551,14 @@ namespace CMU462
 				float ymid = (ymax + ymin) / 2;
 
 				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymin, xmax, ymid))
-				{
 					filldivision(color, xmin, ymin, xmax, ymid);
-				}
 				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymin, xmax, ymid))
-				{
 					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmax, ymid, threshold);
-				}
 
 				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
-				{
 					filldivision(color, xmin, ymid + 1, xmax, ymax);
-				}
-
 				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
-				{
 					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymid + 1, xmax, ymax, threshold);
-				}
 
 			}
 		}
@@ -568,15 +571,16 @@ namespace CMU462
 		float x2, float y2,
 		Color color)
 	{
+		//cout << x0 << ", " << y0 << "	" << x1 << ", " << y1 << "	" << x2 << ", " << y2 << endl;
 
 		float xmin, ymin, xmax, ymax;
-		xmin = max(min(x0, min(x1, x2)), 0.01f);
-		ymin = max(min(y0, min(y1, y2)), 0.01f);
-		xmax = min(max(x0, max(x1, x2)), target_w + 0.01f);
-		ymax = min(max(y0, max(y1, y2)), target_h + 0.01f);
+		xmin = max(min(x0, min(x1, x2)) - 0.5f, 0.01f);
+		ymin = max(min(y0, min(y1, y2)) - 0.5f, 0.01f);
+		xmax = min(max(x0, max(x1, x2)) + 0.5f, target_w + 0.01f);
+		ymax = min(max(y0, max(y1, y2)) + 0.5f, target_h + 0.01f);
 
 		divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmax, ymax, 16);
-		
+
 
 		/*for (int i = (xmin); i < (xmax); i++)
 		{
@@ -601,17 +605,54 @@ namespace CMU462
 		float x1, float y1,
 		Texture& tex)
 	{
-		// Task 6:
-		// Implement image rasterization
+		//if (sampler->get_sample_method() == BILINEAR)
+		//	for (int i = max(x0, .0f); i < min(x1, (float)target_w); i++)
+		//		for (int j = max(y0, .0f); j < min(y1, (float)target_h); j++)
+		//			rasterize_point(i, j, sampler->sample_bilinear(tex, (i - x0 + 0.5f) / (x1 - x0), (j - y0 + 0.5f) / (y1 - y0), 0));
+		//else if (sampler->get_sample_method() == TRILINEAR)
+		//{
+		float L = sqrt(tex.width * tex.height / (x1 - x0) / (y1 - y0));
+		for (int i = max(x0, .0f); i < min(x1, (float)target_w); i++)
+			for (int j = max(y0, .0f); j < min(y1, (float)target_h); j++)
+			{
+				if (L > 1)
+					rasterize_point(i, j, sampler->
+						sample_trilinear(tex, (i - x0 + 0.5f) / (x1 - x0), (j - y0 + 0.5f) / (y1 - y0), L, L));
+				else
+					rasterize_point(i, j, sampler->
+						sample_bilinear(tex, (i - x0 + 0.5f) / (x1 - x0), (j - y0 + 0.5f) / (y1 - y0)));
+			}
+
+		/*}*/
 	}
 
 	// resolve samples to render target
 	void SoftwareRendererImp::resolve(void)
 	{
+		clear_target();
+		//cout << target_w << "x" << target_h << ":" << sample_rate << ", " << tricount << endl;
+		for (int x = 0; x < target_w; x++)
+			for (int y = 0; y < target_h; y++)
+			{
+				float r = 0, g = 0, b = 0, a = 0;
+				for (int i = 0; i < sample_rate; i++)
+					for (int j = 0; j < sample_rate; j++)
+					{
+						r += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate)];
+						g += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 1];
+						b += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 2];
+						a += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 3];
+					}
+				render_target[4 * (x + y * target_w)] = (uint8_t)(r / sample_rate / sample_rate);
+				render_target[4 * (x + y * target_w) + 1] = (uint8_t)(g / sample_rate / sample_rate);
+				render_target[4 * (x + y * target_w) + 2] = (uint8_t)(b / sample_rate / sample_rate);
+				render_target[4 * (x + y * target_w) + 3] = (uint8_t)(a / sample_rate / sample_rate);
+			}
 
 		// Task 4:
 		// Implement supersampling
 		// You may also need to modify other functions marked with "Task 4".
+		clear_sample();
 		return;
 	}
 

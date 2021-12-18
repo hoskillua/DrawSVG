@@ -8,7 +8,7 @@
 #include <thread>
 
 #define RasterDetectStep 0.2
-#define Fzero 1e-2
+#define Fzero 1e-20
 #include "triangulation.h"
 
 using namespace std;
@@ -21,7 +21,7 @@ namespace CMU462
 
 	void SoftwareRendererImp::draw_svg(SVG& svg)
 	{
-
+		clear_sample();
 		// set top level transformation
 		transformation = svg_2_screen;
 
@@ -249,6 +249,29 @@ namespace CMU462
 	// The input arguments in the rasterization functions
 	// below are all defined in screen space coordinates
 
+	void SoftwareRendererImp::set_sample_buffer(int x, int y, Color color)
+	{
+		// check bounds
+		if (x < 0 || x >= target_w * sample_rate)
+			return;
+		if (y < 0 || y >= target_h * sample_rate)
+			return;
+
+		// fill sample - NOT doing alpha blending!
+		sample_buffer[4 * (x + y  * target_w * sample_rate)] =
+			color.a * (color.r * 255) +
+			(1 - color.a) * sample_buffer[4 * (x + y * target_w * sample_rate)];
+		sample_buffer[4 * (x + y * target_w * sample_rate) + 1] =
+			color.a * (color.g * 255) +
+			(1 - color.a) * sample_buffer[4 * (x + y * target_w * sample_rate) + 1];
+		sample_buffer[4 * (x + y * target_w * sample_rate) + 2] =
+			color.a * (color.b * 255) +
+			(1 - color.a) * sample_buffer[4 * (x + y * target_w * sample_rate) + 2];
+		sample_buffer[4 * (x + y * target_w * sample_rate) + 3] =
+			(color.a * 255) +
+			(1 - color.a) * sample_buffer[4 * (x + y * target_w * sample_rate) + 3];
+	}
+
 	void SoftwareRendererImp::rasterize_point(float x, float y, Color color)
 	{
 
@@ -287,18 +310,21 @@ namespace CMU462
 	{
 
 
-		bool antialising = true;
+		bool antialising = false;
 		float swidth = 0.6;
 		float ewidth = 0.6;
-
-		swidth = abs(swidth);
-		ewidth = abs(ewidth);
 
 		float m = (y1 - y0) / (x1 - x0);
 		if (swidth < 0.5 && ewidth < 0.5)
 			return;
 		else if (swidth > 1.1 || ewidth > 1.1 || sample_rate > 1)
 		{
+			if (x0 > x1)
+			{
+				swap(y0, y1);
+				swap(x0, x1);
+			}
+
 			float x00, x01, x10, x11, y00, y01, y10, y11;
 
 			float theta = atan2(y1 - y0, x1 - x0);
@@ -403,7 +429,7 @@ namespace CMU462
 		float p1 = (i + step - x0) * (y1 - y0) - (j + step - y0) * (x1 - x0);
 		float p2 = (i + step - x1) * (y2 - y1) - (j + step - y1) * (x2 - x1);
 		float p3 = (i + step - x2) * (y0 - y2) - (j + step - y2) * (x0 - x2);
-		return (p1 >= -Fzero && p2 >= -Fzero && p3 >= -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero);
+		return (p1 > -Fzero && p2 > -Fzero && p3 > -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero);
 	}
 
 	void SoftwareRendererImp::filldivision(
@@ -415,10 +441,11 @@ namespace CMU462
 		{
 			for (int j = (ymin)*sample_rate; j < (ymax + 1) * sample_rate; j++)
 			{
-				sample_buffer[4 * (i + j * target_w * sample_rate)] = (uint8_t)(color.r * 255);
+				set_sample_buffer(i, j, color);
+				/*sample_buffer[4 * (i + j * target_w * sample_rate)] = (uint8_t)(color.r * 255);
 				sample_buffer[4 * (i + j * target_w * sample_rate) + 1] = (uint8_t)(color.g * 255);
 				sample_buffer[4 * (i + j * target_w * sample_rate) + 2] = (uint8_t)(color.b * 255);
-				sample_buffer[4 * (i + j * target_w * sample_rate) + 3] = (uint8_t)(color.a * 255);
+				sample_buffer[4 * (i + j * target_w * sample_rate) + 3] = (uint8_t)(color.a * 255);*/
 			}
 		}
 	}
@@ -519,10 +546,7 @@ namespace CMU462
 					{
 						if (point_in_traingle(x0, y0, x1, y1, x2, y2, i / ((float)sample_rate), j / ((float)sample_rate)))
 						{
-							sample_buffer[4 * (i + j * target_w * sample_rate)] = (uint8_t)(color.r * 255);
-							sample_buffer[4 * (i + j * target_w * sample_rate) + 1] = (uint8_t)(color.g * 255);
-							sample_buffer[4 * (i + j * target_w * sample_rate) + 2] = (uint8_t)(color.b * 255);
-							sample_buffer[4 * (i + j * target_w * sample_rate) + 3] = (uint8_t)(color.a * 255);
+							set_sample_buffer(i, j, color);
 						}
 					}
 				}
@@ -629,7 +653,7 @@ namespace CMU462
 	// resolve samples to render target
 	void SoftwareRendererImp::resolve(void)
 	{
-		clear_target();
+		//clear_target();
 		//cout << target_w << "x" << target_h << ":" << sample_rate << ", " << tricount << endl;
 		for (int x = 0; x < target_w; x++)
 			for (int y = 0; y < target_h; y++)
@@ -643,16 +667,16 @@ namespace CMU462
 						b += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 2];
 						a += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 3];
 					}
-				render_target[4 * (x + y * target_w)] = (uint8_t)(r / sample_rate / sample_rate);
-				render_target[4 * (x + y * target_w) + 1] = (uint8_t)(g / sample_rate / sample_rate);
-				render_target[4 * (x + y * target_w) + 2] = (uint8_t)(b / sample_rate / sample_rate);
-				render_target[4 * (x + y * target_w) + 3] = (uint8_t)(a / sample_rate / sample_rate);
+				a = a / sample_rate / sample_rate;
+				render_target[4 * (x + y * target_w)    ] = (uint8_t)min((r /sample_rate / sample_rate * (255 / a)),255.f);
+				render_target[4 * (x + y * target_w) + 1] = (uint8_t)min((g /sample_rate / sample_rate * (255 / a)), 255.f);
+				render_target[4 * (x + y * target_w) + 2] = (uint8_t)min((b /sample_rate / sample_rate * (255 / a)), 255.f);
+				render_target[4 * (x + y * target_w) + 3] = (uint8_t)(255);
 			}
 
 		// Task 4:
 		// Implement supersampling
 		// You may also need to modify other functions marked with "Task 4".
-		clear_sample();
 		return;
 	}
 

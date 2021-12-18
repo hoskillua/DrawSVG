@@ -113,6 +113,8 @@ class SoftwareRendererImp : public SoftwareRenderer {
 
   // Rasterization //
 
+  void set_sample_buffer(int x, int y, Color color);
+  
   // rasterize a point
   void rasterize_point( float x, float y, Color color );
 

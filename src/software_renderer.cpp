@@ -8,7 +8,7 @@
 #include <thread>
 
 #define RasterDetectStep 0.2
-#define Fzero 1e-20
+#define Fzero 1e-2
 #include "triangulation.h"
 
 using namespace std;
@@ -253,12 +253,15 @@ namespace CMU462
 	{
 		// check bounds
 		if (x < 0 || x >= target_w * sample_rate)
+		{
 			return;
+		}
 		if (y < 0 || y >= target_h * sample_rate)
+		{
 			return;
-
+		}
 		// fill sample - NOT doing alpha blending!
-		sample_buffer[4 * (x + y  * target_w * sample_rate)] =
+		sample_buffer[4 * (x + y * target_w * sample_rate)] =
 			color.a * (color.r * 255) +
 			(1 - color.a) * sample_buffer[4 * (x + y * target_w * sample_rate)];
 		sample_buffer[4 * (x + y * target_w * sample_rate) + 1] =
@@ -425,11 +428,12 @@ namespace CMU462
 		float x2, float y2,
 		float i, float j)
 	{
+		//if (fabs(y0 - y1) < Fzero && y2 < y1)	return true;
 		float step = 0.5 / sample_rate;
 		float p1 = (i + step - x0) * (y1 - y0) - (j + step - y0) * (x1 - x0);
 		float p2 = (i + step - x1) * (y2 - y1) - (j + step - y1) * (x2 - x1);
 		float p3 = (i + step - x2) * (y0 - y2) - (j + step - y2) * (x0 - x2);
-		return (p1 > -Fzero && p2 > -Fzero && p3 > -Fzero) || (p1 <= Fzero && p2 <= Fzero && p3 <= Fzero);
+		return (p1 < Fzero && p2 < Fzero && p3 < Fzero) || (p1 > -Fzero && p2 > -Fzero && p3 > -Fzero);
 	}
 
 	void SoftwareRendererImp::filldivision(
@@ -538,20 +542,16 @@ namespace CMU462
 	{
 		if ((xmax - xmin) * (ymax - ymin) <= threshold * threshold)
 		{
-			if (/*!(rand() % 1000) || */1)
+			for (int i = (xmin - 1) * sample_rate; i < (xmax)*sample_rate; i++)
 			{
-				for (int i = (xmin - 1) * sample_rate; i < (xmax + 1) * sample_rate; i++)
+				for (int j = (ymin - 1) * sample_rate; j < (ymax)*sample_rate; j++)
 				{
-					for (int j = (ymin - 1) * sample_rate; j < (ymax + 1) * sample_rate; j++)
+					if (point_in_traingle(x0, y0, x1, y1, x2, y2, (i + sample_rate) / ((float)sample_rate), (j + sample_rate) / ((float)sample_rate)))
 					{
-						if (point_in_traingle(x0, y0, x1, y1, x2, y2, i / ((float)sample_rate), j / ((float)sample_rate)))
-						{
-							set_sample_buffer(i, j, color);
-						}
+						set_sample_buffer(i + sample_rate, j + sample_rate, color);
 					}
 				}
 			}
-
 		}
 		else
 		{
@@ -564,10 +564,10 @@ namespace CMU462
 				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymin, xmid, ymax))
 					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmid, ymax, threshold);
 
-				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmid + 1, ymin, xmax, ymax))
-					filldivision(color, xmid + 1, ymin, xmax, ymax);
-				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmid + 1, ymin, xmax, ymax))
-					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmid + 1, ymin, xmax, ymax, threshold);
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmid  ,ymin, xmax, ymax))
+					filldivision(color, xmid , ymin, xmax, ymax);
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmid , ymin, xmax, ymax))
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmid , ymin, xmax, ymax, threshold);
 
 			}
 			else
@@ -579,10 +579,10 @@ namespace CMU462
 				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymin, xmax, ymid))
 					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymin, xmax, ymid, threshold);
 
-				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
-					filldivision(color, xmin, ymid + 1, xmax, ymax);
-				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymid + 1, xmax, ymax))
-					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymid + 1, xmax, ymax, threshold);
+				if (TriangleRectFill(x0, y0, x1, y1, x2, y2, xmin, ymid, xmax, ymax))
+					filldivision(color, xmin, ymid , xmax, ymax);
+				else if (TriangleRectIntersect(x0, y0, x1, y1, x2, y2, xmin, ymid, xmax, ymax))
+					divide_screen2x2_rasterize_tr(x0, y0, x1, y1, x2, y2, color, xmin, ymid, xmax, ymax, threshold);
 
 			}
 		}
@@ -668,9 +668,9 @@ namespace CMU462
 						a += sample_buffer[4 * ((x * sample_rate + i) + (y * sample_rate + j) * target_w * sample_rate) + 3];
 					}
 				a = a / sample_rate / sample_rate;
-				render_target[4 * (x + y * target_w)    ] = (uint8_t)min((r /sample_rate / sample_rate * (255 / a)),255.f);
-				render_target[4 * (x + y * target_w) + 1] = (uint8_t)min((g /sample_rate / sample_rate * (255 / a)), 255.f);
-				render_target[4 * (x + y * target_w) + 2] = (uint8_t)min((b /sample_rate / sample_rate * (255 / a)), 255.f);
+				render_target[4 * (x + y * target_w)] = (uint8_t)min((r / sample_rate / sample_rate * (255 / a)), 255.f);
+				render_target[4 * (x + y * target_w) + 1] = (uint8_t)min((g / sample_rate / sample_rate * (255 / a)), 255.f);
+				render_target[4 * (x + y * target_w) + 2] = (uint8_t)min((b / sample_rate / sample_rate * (255 / a)), 255.f);
 				render_target[4 * (x + y * target_w) + 3] = (uint8_t)(255);
 			}
 

@@ -1,233 +1,214 @@
-# SVG Rasterizer
+<h1 align="center">
+  Draw SVG
+</h1>
 
-## Overview
+# Overview
 
-In this project, you will implement a simple software rasterizer that draws points, lines, triangles, and bitmap images. When you are done, you will have a viewer that supports the basic features of the Scalable Vector Graphics (SVG) format that is now widely used on the internet.
-
-## Getting started
-
-We will be distributing assignments with git. You can find the repository for this assignment at https://github.com/CMU-Graphics/DrawSVG. If you are unfamiliar with git, here is what you need to do to get the starter code:
-
-```
-$ git clone https://github.com/CMU-Graphics/DrawSVG.git
-```
-
-This will create a  folder with all the source files.
-
-### Build Instructions
-
-In order to ease the process of running on different platforms, we will be using [CMake](http://www.cmake.org/) for our assignments. You will need a CMake installation of version 2.8+ to build the code for this assignment. It should also be relatively easy to build the assignment and work locally on Windows, OSX or 64-bit version of Linux. Building on ARM (e.g. Raspberry Pi, some Chromebooks) is currently not supported.
-
-#### VSCode Build Instructions (All Platforms)
-
-We recommend using [Visual Studio Code](https://code.visualstudio.com/download) on all platforms. Once you install CMake and VSCode, you will also need to install the C/C++ extension within VSCode.
-
-The build and launch data is contained within the `.vscode` directory. Select the folder for your compiler and move `launch.json` and `tasks.json` up one level into the `.vscode` directory. To set commandline arguments, go to `launch.json` and add them within `args`. For example, to run the program with test 1, you would add `./basic/test1.svg`. You can build using <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> and debug using <kbd>F5</kbd>. If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug`.
-
-Commonly used Hotkeys:
-- <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> - Build
-- <kbd>F5</kbd> - Debug
-  - <kbd>F9</kbd> - Toggle Breakpoint
-  - <kbd>F10</kbd> - Step Over
-  - <kbd>F11</kbd> - Step Into
-  - <kbd>Shift</kbd>+<kbd>F5</kbd> - Stop
-- <kbd>Ctrl</kbd>+<kbd>P</kbd> - Search for file
-- <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> - Run Command
-- Right click to go to definition/declaration/references
-  
-#### OS X/Linux Build Instructions
-
-If you are working on OS X and do not have CMake installed, we recommend installing it through [Homebrew](http://brew.sh/): `$ brew install cmake`.  You may also need the freetype package `$ brew install freetype`.
-
-If you are working on Linux, you should be able to install dependencies with your system's package manager as needed (you may need cmake and freetype, and possibly others).
-
-To build your code for this assignment:
-
-```
-$ cd DrawSVG && mkdir build && cd build
-$ cmake ..
-$ make
-```
-
-These steps (1) create an out-of-source build directory, (2) configure the project using CMake, and (3) compile the project. If all goes well, you should see an executable `drawsvg` in the build directory. As you work, simply typing `make` in the build directory will recompile the project.
-
-#### Windows Build Instructions using Visual Studio
-
-We have a beta build support for Windows systems. You need to install the latest version of [CMake](http://www.cmake.org/) and install [Visual Studio Community](https://visualstudio.microsoft.com/vs/). After installing these programs, you can run `runcmake_win.bat` by double-clicking on it. This should create a `build` directory with a Visual Studio solution file in it named `drawsvg.sln`. You can double-click this file to open the solution in Visual Studio.
-
-If you plan on using Visual Studio to debug your program, you can change `drawsvg` project in the Solution Explorer as the startup project by right-clicking on it and selecting `Set as StartUp Project`. You can also set the commandline arguments to the project by right-clicking `drawsvg` project again, selecting `Properties`, going into the `Debugging` tab, and setting the value in `Command Arguments`. If you want to run the program with the basic svg folder, you can set this command argument to `../../svg/basic`. After setting all these, you can hit F5 to build your program and run it with the debugger.
-
-If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug` by clicking the Solution Configurations drop down menu on the top menu bar. Note that you will have to set `Command Arguments` again if you change the build mode.
-
-#### Windows Build Instructions Using CLion 
-
-(tested on CLion 2018.3)
-
-Open CLion, then do `File -> Import Project..`
-
-In the popped out window, find and select the project folder `...\DrawSVG`, click OK, click Open Existing Project, then select New Window
-
-Make sure the drop down menu on top right has drawsvg selected (it should say `drawsvg | Debug`). Then open the drop down menu again and go to Edit Configurations..
-
-Fill in Program arguments, say, `./svg/basic`, then click Apply and close the popup
-
-Now you should be able to click on the green run button on top right to run the project.
-
-
-### Using the Mini-SVG Viewer App
-
-When you have successfully built your code, you will get an executable named **drawsvg**. The **drawsvg** executable takes exactly one argument from the command line. You may load a single SVG file by specifying its path. For example, to load the example file `svg/basic/test1.svg` :
-
-```
-./drawsvg ../svg/basic/test1.svg
-```
-
-When you first run the application, you will see a picture of a flower made of a bunch of blue points. The starter code that you must modify is drawing these points. Now press the R key to toggle display to the staff's reference solution to this assignment. You'll see that the reference differs from "your solution" in that it has a black rectangle around the flower. (This is because you haven't implemented line drawing yet!)
-
-While looking at the reference solution, hold down your primary mouse button (left button) and drag the cursor to pan the view. You can also use scroll wheel to zoom the view. (You can always hit SPACE to reset the viewport to the default view conditions). You can also compare the output of your implementation with that of the reference implementation. To toggle the diff view, press D. We have also provided you with a "pixel-inspector" view to examine pixel-level details of the currently displayed implementation more clearly. The pixel inspector is toggled with the Z key.
-
-For convenience, `drawsvg` can also accept a path to a directory that contains multiple SVG files. To load files from `svg/basic`:
-
-```
-./drawsvg ../svg/basic
-```
-
-The application will load up to nine files from that path and each file will be loaded into a tab. You can switch to a specific tab using keys 1 through 9.
+A simple interactive program that renders SVG files, it draws points, lines, triangles, and bitmap images. The code skeleton was provided by [cmu's introduction to computer garphics course](http://15462.courses.cs.cmu.edu/fall2021/) so I implemented algorithms for rasterizing primitives efficiently. It supports multisampling, transformations, viewport navigation & alpha blending. To see build instructions, scroll down to the bottom of this readme.
 
 ### Summary of Viewer Controls
 
 A table of all the keyboard controls in the **draw** application is provided below.
 
-| Command                                  |  Key  |
-| ---------------------------------------- | :---: |
-| Go to tab                                | 1 ~ 9 |
-| Switch to hw renderer                    |   H   |
-| Switch to sw renderer                    |   S   |
-| Toggle sw renderer impl (student soln/ref soln) |   R   |
+```
+
+| Command                                           |  Key  |
+| ------------------------------------------------- | :---: |
+| Go to tab                                         | 1 ~ 9 |
+| Switch to hw renderer                             |   H   |
+| Switch to sw renderer                             |   S   |
+| Toggle sw renderer impl (student soln/ref soln)   |   R   |
 | Regenerate mipmaps for current tab (student soln) |   ;   |
-| Regenerate mipmaps for current tab (ref soln) |   '   |
-| Increase samples per pixel               |   =   |
-| Decrease samples per pixel               |   -   |
-| Toggle text overlay                      |   `   |
-| Toggle pixel inspector view              |   Z   |
-| Toggle image diff view                   |   D   |
-| Reset viewport to default position       | SPACE |
+| Regenerate mipmaps for current tab (ref soln)     |   '   |
+| Increase samples per pixel                        |   =   |
+| Decrease samples per pixel                        |   -   |
+| Toggle text overlay                               |   `   |
+| Toggle pixel inspector view                       |   Z   |
+| Toggle image diff view                            |   D   |
+| Reset viewport to default position                | SPACE |
+
+```
 
 Other controls:
 
 - Panning the view: click and drag the cursor
 - Zooming in and out: scroll wheel (typically a two-finger drag on a trackpad)
 
-### What You Need to Do
+# Features and Results
 
-![Tasks](misc/tasks.png?raw=true)
-
-The assignment is divided into nine major tasks, which are described below in the order the course staff suggests you attempt them. You are of course allowed to do the assignment in any order you choose. Although you have a little over 2 weeks to complete this assignment, the assignment **involves significant implementation effort. Also, be advised that meeting the requirements of later tasks may involve restructuring code that you implemented in earlier ones.** We have split the assignment into a checkpoint and final submission to ensure you do not fall behind. Please consult the schedule on the course webpage for checkpoint and final due dates.
-
-### Grading
-
-DrawSVG is made by humans, and will be graded by humans. We are not asking for a pixel-perfect recreation of the reference solution. Floating-point arithmetic on different architectures may lead to subtle inconsistencies that may make your solution a few pixels different than the reference. You should instead aim to have the bigger picture down: lines are in the general same area and thickness, no gaps in triangle fills, etc. It should be clear that if we held the two images together side by side, there shouldn't be a difference to the human eye (we're looking for eye-level differences, not pixel level differences). If you are unsure about grading, feel free to ask on piazza.
-
-Please make sure that your submission builds when submitting to Autolab. Check the assignment details on the course website for instructions on how to tar your files. We will run an autograding script to make sure you've included all the necessary filles and to ensure your program complies on the Gates 5 machines. If you receive  a negative score, Autolab will provide you feedback on what you need to fix in your program before submitting. You have unlimited submissions.
-
-### Friendly Advice from your TAs 
-
-- As always, start early. There is a lot to implement in this assignment, so don't fall behind!
-- Open `.../DrawSVG/CMU462/docs/html/index.html` with a browser to see documentation of many utility classes, **especially the ones related to vectors and matrices**.
-- Be careful with memory allocation, as too many or too frequent heap allocations will severely degrade performance.
-- Be careful with types (e.g. float, double, int, uint8_t), casting, and using the right functions for each type. Take note of the `uint8_to_float` and `float_to_uint8` functions in `texture.cpp`, which you may find helpful for later tasks.
-- While C has many pitfalls, C++ introduces even more wonderful ways to shoot yourself in the foot. Later assignments will require you to use C++ classes and objects, so take the time to learn the new features C++ introduces. 
-- Currently, DrawSVG does not support rendering `<circle>` svg elements (which is different from `<ellipse>`).
-
-#### Getting Acquainted with the Starter Code
-
-Before you start, here are some basic information on the structure of the starter code.
+#### Pipeline
 
 ![Pipeline](misc/pipeline.png?raw=true)
 
 The program reads in an SVG and initiates the window via context setup. The SVG is then parsed into a set of primitives, and the `draw_elements` function is called on each SVG element, rasterizing the primitives to pixels in the sample buffer. Pixels in the sample buffer are then filtered in the `resolve` function and sent to the target buffer where they are displayed onscreen. The above diagram illustrates how each task falls into the pipeline. The sample buffer takes multiple samples per pixel, and adjacent pixels in the sample buffer are averaged together for each target buffer pixel.
 
-All the source code files are contained in `src` directory. You're welcome to browse through and/or edit any file, but the following ones and their headers are probably the most relevant:
+### Hardware Renderer
 
-- `hardware/hardware_renderer` (task 1)
-- `software_renderer` (most tasks)
-- `viewport` (task 5)
-- `texture` (tasks 6, 7)
+Using OpenGL to implement `rasterize_point()`, `rasterize_line()`, and `rasterize_triangle()` in `hardware/hardware_renderer.cpp`. to view rendered SVG's by this we simply run DrawSVG and press `h`.
 
-Most of your work will be constrained to implementing part of the class `SoftwareRendererImp` in `software_renderer.cpp`. The `SoftwareRendererImp` class is derived from the `SoftwareRenderer` and `SoftwareRendererRef` classes. **Please do not modify `SoftwareRenderer` or `SoftwareRendererRef` or else your program will crash**. The most important method is `draw_svg` which (not surprisingly) accepts an SVG object to draw. An SVG file defines its canvas (which defines a 2D coordinate space), and specifies a list of shape elements (such as points, lines, triangles, and images) that should be drawn on that canvas. Each shape element has a number of style parameters (e.g., color) as well as a modeling transform used to determine the element's position on the canvas. You can find the definition of the SVG class (and all the associated `SVGElements`) in `svg.h`. Notice that one type of `SVGElement` is a group that itself contains child elements. Therefore, you should think of an SVG file as defining a tree of shape elements. (Interior nodes of the tree are groups, and leaves are shapes.)
+For all of the other features, all of them were implemented **without OpenGL**. So the rasterization algorithms were impelemented from scratch.
 
-Another important method on the `SoftwareRendererImp` class is `set_render_target()`, which provides your code a buffer corresponding to the output image (it also provides width and height of the buffer in pixels, which are stored locally as `target_w` and `target_h`). This buffer is often called the "render target" in many applications, since it is the "target" of rendering commands. **We use the term pixel here on purpose because the values in this buffer are the values that will be displayed on screen.** Pixel values are stored in row-major format, and each pixel is an 8-bit RGBA value (32 bits in total). Your implementation needs to fill in the contents of this buffer when it is asked to draw an SVG file.
+<div align="center">
+<img src="./doc/readme/Hardware0.JPG" style="Height: 250px" alt="Hardware SVG">
+<img src="./doc/readme/Hardware1.JPG" style="Height: 250px" alt="Hardware Rasterized">
+</div>
 
-`set_render_target()` is called whenever the user resizes the application window.
+<div align="center">
+  <b>rendering <i>basic/test3.svg</i> using OpenGL's API</b>
+</div>
+<br/>
 
+### Drawing Lines
 
-#### A Simple Example: Drawing Points
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
-You are given starter code that already implements drawing of 2D points. To see how this works, begin by taking a look at `draw_svg()` in `software_renderer.cpp`. The method accepts an SVG file, and draws all elements in the SVG file via a sequence of calls to `draw_element()`. For each element `draw_element()` inspects the type of the element, and then calls the appropriate draw function. In the case of points, that function is `draw_point()`.
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
 
-The position of each point is defined in a local coordinate frame, so `draw_point()` first transforms the input point into its screen-space position (see line `Vector2D p = transform(point.position)`). This transform is set at the beginning of `draw_svg()`. In the starter code, this transform converts from the svg canvas' coordinate system to screen coordinates. You will need to handle more complex transforms to support more complex SVG files and implement mouse viewing controls later in the assignment.
+<div align="center">
+<img src="./doc/readme/Lines0.JPG" style="Height: 500px" alt="Lines Bresenham">
+</div>
 
-The function `rasterize_point()` is responsible for actually drawing the point. In this assignment we define screen space for an output image of size `(target_w, target_h)` as follows:
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i>: Bresenham's algorithm</b>
+</div>
+<br/>
 
-- `(0, 0)` corresponds to the top-left of the output image
-- `(target_w, target_h)` corresponds to the bottom-right of the output image
-- **Please assume that screen sample positions are located at half-integer coordinates in screen space. That is, the top-left sample point is at coordinate (0.5, 0.5), and the bottom-right sample point is at coordinate (target_w-0.5, target_h-0.5).**
+<div align="center">
+<img src="./doc/readme/Lines1.JPG" style="Height: 500px" alt="Lines Xiaolin Wu">
+</div>
 
-![Sample locations](misc/coord_1spp.png?raw=true)
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i>: Xiaolin Wu's line algorithm (anti-aliasing)</b>
+</div>
+<br/>
 
-To rasterize points, we adopt the following rule: a point covers at most one screen sample: the closest sample to the point in screen space. This is implemented as follows, assuming (x, y) is the screen-space location of a point.
+<div align="center">
+<img src="./doc/readme/Lines2.JPG" style="Height: 500px" alt="Lines Variable End & Start Widthes">
+</div>
 
-```
-int sx = (int) floor(x);
-int sy = (int) floor(y);
-```
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i>: Variable End & Start Widthes (right)</b>
+</div>
+<br/>
 
-Of course, the code should not attempt to modify the render target buffer at invalid pixel locations.
+TODO:
 
-```
-if ( sx < 0 || sx > target_w ) return;
-if ( sy < 0 || sy > target_h ) return;
-```
+### Drawing Traingles
 
-If the points happen to be on screen, we fill in the pixel with the RGBA color associated with the point.
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
-```
-  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
-  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
-  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
-```
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
 
-At this time the starter code does not correctly handle transparent points. We'll come back to this later.
+<div align="center">
+<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+</div>
 
-**Now that you understand the basics of drawing elements, let's get to work actually drawing more interesting elements than points!**
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i></b>
+</div>
+<br/>
 
+### Transformations
 
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
-#### Task 1: Hardware Renderer
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
 
-In this task, you will finish implementing parts of the hardware renderer using OpenGL. In particular, you will be responsible for implementing `rasterize_point()`, `rasterize_line()`, and `rasterize_triangle()` in `hardware/hardware_renderer.cpp`. All other OpenGL context has been set up for you outside of these methods, so you only need to use `glBegin()`, `glEnd()`, and appropriate function calls in between those two functions. (You may be interested in `glColor4f()` and `glVertex2f()`, along with `GL_POINTS`, `GL_LINES`, and `GL_TRIANGLES`.) You can find an extensive guide to OpenGL [here](http://altanmesut.trakya.edu.tr/grafik/OpenGL_Programming_Guide.pdf), but feel free to google function names for quick documentation.
+<div align="center">
+<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+</div>
 
-Once you're done, you can test your solution by running DrawSVG and pressing `h`.
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i></b>
+</div>
+<br/>
 
-#### Task 2 : Warm Up: Drawing Lines
+### Viewport Navigation
 
-In this task you will add line drawing functionality by implementing the function `rasterize_line()` in `software_renderer.cpp`.
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
-In Lecture 1, we discussed a few ways to think about rasterizing a line. (Recall we talked about possible rules for what samples are considered to be "covered" by the line, and we discussed algorithms for efficiently determining what samples meet that criteria. Since line drawing is very well documented on the web (and this is just a warm up exercise), you may consult the web and use any algorithm you wish. However, your solution should:
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
 
-- Handle non-integer vertex coordinates passed to `rasterize_line()`.
-- Handle lines of any slope.
-- Perform work proportional to the length of the line (methods that perform work for every pixel on screen or for all samples in the bounding box of the line are not acceptable solutions).
+<div align="center">
+<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+</div>
 
-We encourage you to start with an implementation of [Bresenham's algorithm](http://www.cs.helsinki.fi/group/goa/mallinnus/lines/bresenh.html) and then, if you wish, continue on with implementations that improve quality (e.g., draw smooth lines) or optimize drawing performance.
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i></b>
+</div>
+<br/>
 
-When you are done, your solution should be able to correctly render `basic/test2.svg`.
+### Rendering Scaled Images
 
-##### Possible Extra Credit Extensions:
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
-- (2 pts) If you compare your initial Bresenham results with the reference implementation, you will notice that the reference solution generates smooth lines. For example, you could modify your Bresenham implementation to perform [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu's_line_algorithm).
-- (2 pts) Add support for specifying a line width.
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+
+<div align="center">
+<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+</div>
+
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i></b>
+</div>
+<br/>
+
+### Alpha Blending
+
+By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
+
+- Handling non-integer vertex coordinates passed to `rasterize_line()`.
+- Handling lines of any slope.
+- Performing work proportional to the length of the line (**O(n)**).
+- Supporting specifying a line width (by splitting into 2 traingles).
+- Variable width from start and end.
+- Supports two line drawing algorithms:
+  - **Bresenham's algorithm** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+
+<div align="center">
+<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+</div>
+
+<div align="center">
+  <b>rendering <i>basic/test2.svg</i></b>
+</div>
+<br/>
 
 #### Task 3: Drawing Triangles
 
@@ -259,8 +240,8 @@ It's reasonable to think of supersampled rendering as rendering an image that is
 To help you out, here is a sketch of an implementation:
 
 - The image being rendered is stored in `render_target`, an array that stores each pixel's color components as an `uint8_t` in rgbargba... order. The width and height in pixels of the `render_target` are stored as `target_w` and `target_h` respectively. Refer to `rasterize_point` to see how it can be modified.
-- When rasterizing primitives such as triangles, rather than directly updating `render_target`, your rasterization should update the contents of a larger buffer (perhaps call it `sample_buffer` or `supersample_target`) that holds the per-super-sample results. It's up to you to manage this buffer yourself. (Hint: See `software_renderer.h` for declarations of helpers used by the reference. The functions `vector::resize()` and `memset()` may be worth looking into.) 
-  - **Don't** add your sample buffer as a member of  `SoftwareRenderer`: instead add it to `SoftwareRendererImp`. This is because the pre-compiled reference code relies on the current memory layout of `SoftwareRenderer`.
+- When rasterizing primitives such as triangles, rather than directly updating `render_target`, your rasterization should update the contents of a larger buffer (perhaps call it `sample_buffer` or `supersample_target`) that holds the per-super-sample results. It's up to you to manage this buffer yourself. (Hint: See `software_renderer.h` for declarations of helpers used by the reference. The functions `vector::resize()` and `memset()` may be worth looking into.)
+  - **Don't** add your sample buffer as a member of `SoftwareRenderer`: instead add it to `SoftwareRendererImp`. This is because the pre-compiled reference code relies on the current memory layout of `SoftwareRenderer`.
 - After rendering is complete, your implementation must resample the supersampled results buffer to obtain sample values for the render target. This is often called "resolving" the supersample buffer into the render target. Please implement resampling using a simple [unit-area box filter](https://en.wikipedia.org/wiki/Box_blur).
 - Note that the function `SoftwareRendererImp::resolve()` is called by `draw_svg()` after the SVG file has been drawn. Thus it's a very convenient place to perform resampling.
 
@@ -354,15 +335,15 @@ You can create an SVG file in popular design tools like Adobe Illustrator or Ink
 Be aware that our starter code and your renderer implementation only support a **subset** of the features defined in the SVG specification, and applications like Adobe Illustrator or Inkscape may not always encode shapes with the primitives we support. (You may need to convert complicated paths to the basic primitives in these tools. This [Path to Polygon Converter](https://betravis.github.io/shape-tools/path-to-polygon/) might be of use.)
 
 If you're using InkScape, and you save your drawing in InkScape as an `InkScape` svg or `Plain` svg, the entire drawing will appear black in DrawSVG.
-To work around this, you should instead save it as an `Optimized SVG`. In the resulting dialog, be sure to select `Convert CSS attributes to XML attributes`, and *deselect* `Shorten color values`.
+To work around this, you should instead save it as an `Optimized SVG`. In the resulting dialog, be sure to select `Convert CSS attributes to XML attributes`, and _deselect_ `Shorten color values`.
 
-If you're using Illustrator, and you get errors with opening your generated SVG file in DrawSVG, make sure your `<svg>` tag contains a `width` and `height` field, with set values. Look at the test case SVGs in the `svg/` folder for reference. 
+If you're using Illustrator, and you get errors with opening your generated SVG file in DrawSVG, make sure your `<svg>` tag contains a `width` and `height` field, with set values. Look at the test case SVGs in the `svg/` folder for reference.
 
 Please name this file `task9.svg`.
 
 #### Going Further: Tasks that May Potentially Win You Extra Credit:
 
-##### Implement More Advanced Shapes 
+##### Implement More Advanced Shapes
 
 We have provided you with a couple of examples of subdividing complex, smooth complex shapes into much simpler triangles in `/subdiv`. Subdivision is something you will dig into in great detail in the next assignment. You can see subdivision in action as you step though the test files we provided.
 
@@ -370,7 +351,87 @@ In addition to what you have implemented already, the [SVG Basic Shapes](http://
 
 ### Resources and Notes
 
-- [Rasterization Rules in Direct3D 11](https://msdn.microsoft.com/en-us/library/windows/desktop/cc627092(v=vs.85).aspx)
+- [Rasterization Rules in Direct3D 11](<https://msdn.microsoft.com/en-us/library/windows/desktop/cc627092(v=vs.85).aspx>)
 - [Rasterization in OpenGL 4.0](https://www.opengl.org/registry/doc/glspec40.core.20100311.pdf#page=156)
 - [Bryce Summer's C++ Programming Guide](https://github.com/Bryce-Summers/Writings/blob/master/Programming%20Guides/C_plus_plus_guide.pdf)
 - [NeHe OpenGL Tutorials Lessons 01~05](http://nehe.gamedev.net/tutorial/lessons_01__05/22004/)
+
+### Build Instructions
+
+In order to ease the process of running on different platforms, we will be using [CMake](http://www.cmake.org/) for our assignments. You will need a CMake installation of version 2.8+ to build the code for this assignment. It should also be relatively easy to build the assignment and work locally on Windows, OSX or 64-bit version of Linux. Building on ARM (e.g. Raspberry Pi, some Chromebooks) is currently not supported.
+
+#### VSCode Build Instructions (All Platforms)
+
+We recommend using [Visual Studio Code](https://code.visualstudio.com/download) on all platforms. Once you install CMake and VSCode, you will also need to install the C/C++ extension within VSCode.
+
+The build and launch data is contained within the `.vscode` directory. Select the folder for your compiler and move `launch.json` and `tasks.json` up one level into the `.vscode` directory. To set commandline arguments, go to `launch.json` and add them within `args`. For example, to run the program with test 1, you would add `./basic/test1.svg`. You can build using <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> and debug using <kbd>F5</kbd>. If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug`.
+
+Commonly used Hotkeys:
+
+- <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> - Build
+- <kbd>F5</kbd> - Debug
+  - <kbd>F9</kbd> - Toggle Breakpoint
+  - <kbd>F10</kbd> - Step Over
+  - <kbd>F11</kbd> - Step Into
+  - <kbd>Shift</kbd>+<kbd>F5</kbd> - Stop
+- <kbd>Ctrl</kbd>+<kbd>P</kbd> - Search for file
+- <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> - Run Command
+- Right click to go to definition/declaration/references
+
+#### OS X/Linux Build Instructions
+
+If you are working on OS X and do not have CMake installed, we recommend installing it through [Homebrew](http://brew.sh/): `$ brew install cmake`. You may also need the freetype package `$ brew install freetype`.
+
+If you are working on Linux, you should be able to install dependencies with your system's package manager as needed (you may need cmake and freetype, and possibly others).
+
+To build your code for this assignment:
+
+```
+$ cd DrawSVG && mkdir build && cd build
+$ cmake ..
+$ make
+```
+
+These steps (1) create an out-of-source build directory, (2) configure the project using CMake, and (3) compile the project. If all goes well, you should see an executable `drawsvg` in the build directory. As you work, simply typing `make` in the build directory will recompile the project.
+
+#### Windows Build Instructions using Visual Studio
+
+We have a beta build support for Windows systems. You need to install the latest version of [CMake](http://www.cmake.org/) and install [Visual Studio Community](https://visualstudio.microsoft.com/vs/). After installing these programs, you can run `runcmake_win.bat` by double-clicking on it. This should create a `build` directory with a Visual Studio solution file in it named `drawsvg.sln`. You can double-click this file to open the solution in Visual Studio.
+
+If you plan on using Visual Studio to debug your program, you can change `drawsvg` project in the Solution Explorer as the startup project by right-clicking on it and selecting `Set as StartUp Project`. You can also set the commandline arguments to the project by right-clicking `drawsvg` project again, selecting `Properties`, going into the `Debugging` tab, and setting the value in `Command Arguments`. If you want to run the program with the basic svg folder, you can set this command argument to `../../svg/basic`. After setting all these, you can hit F5 to build your program and run it with the debugger.
+
+If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug` by clicking the Solution Configurations drop down menu on the top menu bar. Note that you will have to set `Command Arguments` again if you change the build mode.
+
+#### Windows Build Instructions Using CLion
+
+(tested on CLion 2018.3)
+
+Open CLion, then do `File -> Import Project..`
+
+In the popped out window, find and select the project folder `...\DrawSVG`, click OK, click Open Existing Project, then select New Window
+
+Make sure the drop down menu on top right has drawsvg selected (it should say `drawsvg | Debug`). Then open the drop down menu again and go to Edit Configurations..
+
+Fill in Program arguments, say, `./svg/basic`, then click Apply and close the popup
+
+Now you should be able to click on the green run button on top right to run the project.
+
+### Using the Mini-SVG Viewer App
+
+When you have successfully built your code, you will get an executable named **drawsvg**. The **drawsvg** executable takes exactly one argument from the command line. You may load a single SVG file by specifying its path. For example, to load the example file `svg/basic/test1.svg` :
+
+```
+./drawsvg ../svg/basic/test1.svg
+```
+
+When you first run the application, you will see a picture of a flower made of a bunch of blue points. The starter code that you must modify is drawing these points. Now press the R key to toggle display to the staff's reference solution to this assignment. You'll see that the reference differs from "your solution" in that it has a black rectangle around the flower. (This is because you haven't implemented line drawing yet!)
+
+While looking at the reference solution, hold down your primary mouse button (left button) and drag the cursor to pan the view. You can also use scroll wheel to zoom the view. (You can always hit SPACE to reset the viewport to the default view conditions). You can also compare the output of your implementation with that of the reference implementation. To toggle the diff view, press D. We have also provided you with a "pixel-inspector" view to examine pixel-level details of the currently displayed implementation more clearly. The pixel inspector is toggled with the Z key.
+
+For convenience, `drawsvg` can also accept a path to a directory that contains multiple SVG files. To load files from `svg/basic`:
+
+```
+./drawsvg ../svg/basic
+```
+
+The application will load up to nine files from that path and each file will be loaded into a tab. You can switch to a specific tab using keys 1 through 9.

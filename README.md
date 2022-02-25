@@ -126,7 +126,7 @@ By implementing `rasterize_triangle()` in `software_renderer.cpp` and creating a
 </div>
 <br/>
 
-Checked boxes for this approch look like this. It is clear that this algorithm is very efficient compared to the naive search in all pixels in the bounding box.
+Checked boxes for this approach look like this. It is clear that this algorithm is very efficient compared to the naive search on all pixels in the bounding box.
 
 **Below are some examples of rendered SVGs:**
 
@@ -162,151 +162,42 @@ This was tested against extreme SVG files (in terms of numbers of triangles). It
 </div>
 <br/>
 
-### Transformations
+### Transformations & Viewport Navigation
 
-By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
+By modifying `draw_svg()` and `draw_element()` `software_renderer.cpp`, Transformations take effect rendered:
 
-- Handling non-integer vertex coordinates passed to `rasterize_line()`.
-- Handling lines of any slope.
-- Performing work proportional to the length of the line (**O(n)**).
-- Supporting specifying a line width (by splitting into 2 traingles).
-- Variable width from start and end.
-- Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+- Supports all simple transformations (translation, scaling, rotation, shearing, perspective projection)
+- Supports trees of transformations: A hierarchy of transformations and each child transformation is described relative to its parents
+
+The example shown below illustrates these two properties by creating artwork by transforming clones of only 2 objects.
 
 <div align="center">
-<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+<img src="./image/README/1645822874541.png" style="width: 350px" alt="without transformations">
+<img src="./image/README/1645822796663.png" style="width: 351px" alt="with transformations">
 </div>
-
 <div align="center">
-  <b>rendering <i>basic/test2.svg</i></b>
+  <b>rendering <i>basic/test6.svg</i> before and after implementing transformations</b>
 </div>
 <br/>
 
-### Viewport Navigation
-
-By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
-
-- Handling non-integer vertex coordinates passed to `rasterize_line()`.
-- Handling lines of any slope.
-- Performing work proportional to the length of the line (**O(n)**).
-- Supporting specifying a line width (by splitting into 2 traingles).
-- Variable width from start and end.
-- Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+By implementing `ViewportImp::set_viewbox()` in `viewport.cpp`, the following is supported:
 
 <div align="center">
-<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
-</div>
 
-<div align="center">
-  <b>rendering <i>basic/test2.svg</i></b>
+<pre>
+| Command                            |    Key    |
+| ---------------------------------- | :-------: |
+| Zoom in                            | Touch Pad |
+| Zoom out                           | Touch Pad |
+| Move the origin                    | Mouse Pan |
+| Reset viewport to default position |   SPACE   |
+</pre>
+
+  <img src="./image/README/Viewport.gif" style="max-width: 600px" alt="Viewport Navigation">
 </div>
 <br/>
 
 ### Rendering Scaled Images
-
-By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
-
-- Handling non-integer vertex coordinates passed to `rasterize_line()`.
-- Handling lines of any slope.
-- Performing work proportional to the length of the line (**O(n)**).
-- Supporting specifying a line width (by splitting into 2 traingles).
-- Variable width from start and end.
-- Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
-
-<div align="center">
-<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
-</div>
-
-<div align="center">
-  <b>rendering <i>basic/test2.svg</i></b>
-</div>
-<br/>
-
-### Alpha Blending
-
-By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
-
-- Handling non-integer vertex coordinates passed to `rasterize_line()`.
-- Handling lines of any slope.
-- Performing work proportional to the length of the line (**O(n)**).
-- Supporting specifying a line width (by splitting into 2 traingles).
-- Variable width from start and end.
-- Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
-
-<div align="center">
-<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
-</div>
-
-<div align="center">
-  <b>rendering <i>basic/test2.svg</i></b>
-</div>
-<br/>
-
-#### Task 4: Anti-Aliasing Using Supersampling
-
-**This part of the assignment requires only knowledge of concepts from Lectures _Course Introduction_ and _Drawing a Triangle_.**
-
-In this task, you will extend your rasterizer to anti-alias triangle edges via supersampling. In response to the user changing the screen sampling rate (the = and - keys), the application will call `set_sample_rate()` . The parameter `sample_rate` defines the sampling rate in each dimension, so a value of 2 would correspond to a sample density of 4 samples per pixel. In this case, the samples lying within the top-left pixel of the screen would be located at locations (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), and (0.75, 0.75).
-
-![Sample locations](misc/coord_4spp.png?raw=true)
-
-It's reasonable to think of supersampled rendering as rendering an image that is `sample_rate` times larger than the actual output image in each dimension, then resampling the larger rendered output down to the screen sampling rate after rendering is complete. **Note: If you implemented your triangle rasterizer in terms of sampling coverage in screen-space coordinates (and not in terms of pixels), then the code changes to support supersampling should be fairly simple for triangles.**
-
-To help you out, here is a sketch of an implementation:
-
-- The image being rendered is stored in `render_target`, an array that stores each pixel's color components as an `uint8_t` in rgbargba... order. The width and height in pixels of the `render_target` are stored as `target_w` and `target_h` respectively. Refer to `rasterize_point` to see how it can be modified.
-- When rasterizing primitives such as triangles, rather than directly updating `render_target`, your rasterization should update the contents of a larger buffer (perhaps call it `sample_buffer` or `supersample_target`) that holds the per-super-sample results. It's up to you to manage this buffer yourself. (Hint: See `software_renderer.h` for declarations of helpers used by the reference. The functions `vector::resize()` and `memset()` may be worth looking into.)
-  - **Don't** add your sample buffer as a member of `SoftwareRenderer`: instead add it to `SoftwareRendererImp`. This is because the pre-compiled reference code relies on the current memory layout of `SoftwareRenderer`.
-- After rendering is complete, your implementation must resample the supersampled results buffer to obtain sample values for the render target. This is often called "resolving" the supersample buffer into the render target. Please implement resampling using a simple [unit-area box filter](https://en.wikipedia.org/wiki/Box_blur).
-- Note that the function `SoftwareRendererImp::resolve()` is called by `draw_svg()` after the SVG file has been drawn. Thus it's a very convenient place to perform resampling.
-
-When you are done, try increasing the supersampling rate in the viewer, and bask in the glory of having much smoother triangle edges.
-
-Also observe that after enabling supersampled rendering, something might have gone very wrong with the rasterization of points and lines. (Hint: they probably appear to get thinner!) **Please modify your implementation of rasterizing points and lines so that supersampled rendering of these primitives preserves their thickness across different supersampling rates.** Consider having separate functions for filling a "pixel" and filling a "sample." (A solution that does not anti-alias points and lines is acceptable.)
-
-**Possible Extra Credit Extensions:**
-
-- (3 pts) Implement [Morphological anti-aliasing](http://www.cs.cmu.edu/afs/cs/academic/class/15869-f11/www/readings/reshetov09_mlaa.pdf) (MLAA), rather than supersampling. It's shocking how well this works. MLAA is a technique used throughout the gaming community to avoid the high cost of supersampling but still avoid objectionable image artifacts caused by aliasing. (A more advanced version of MLAA is [here](http://www.iryoku.com/mlaa/)).
-- (1 pts) Implement [jittered sampling](http://graphics.pixar.com/library/MultiJitteredSampling/paper.pdf) to improve image quality when supersampling.
-- (2 pts) Implement higher quality resampling filters than a box and analyze their impact on image quality.
-
-#### Task 5: Implementing Modeling and Viewing Transforms
-
-##### Part 1: Modeling Transforms
-
-**This part of the assignment assumes knowledge of concepts in Lecture _Transformations_.**
-
-In previous lectures we discussed how it is common (and often very useful) to describe objects and shapes in their own local coordinate spaces and then build up more complicated objects by positioning many individual components in a single coordinate space. In this task you will extend the renderer to properly interpret the hierarchy of modeling transforms expressed in SVG files.
-
-Recall that an SVG object consists of a hierarchy of shape elements. Each element in an SVG is associated with a modeling transform (see `SVGElement.transform` in `svg.h`) that defines the relationship between the object's local coordinate space and the parent element's coordinate space. At present, the implementation of `draw_element()`ignores these modeling transforms, so the only SVG objects your renderer has been able to correctly draw were objects that contained only identity modeling transforms.
-
-Please modify `draw_svg()` and `draw_element()` to implement the hierarchy of transforms specified in the SVG object. (You can do this in no more than a few lines of code.) You're also free to add code to `software_renderer.h`, though minimal changes should be necessary for this task.
-
-When you are done, you should be able to draw `basic/test6.svg`.
-
-**Hint: If there is an SVGElement which is not in a group, the modeling transform should be the relationship between its local coordinate space and the canvas space. If it is in a group, the modeling transform should be the relationship between its local coordinate space and its parent element's local coordinate space. Look at how the transformation matrix in software renderer is applied, and think about how you can modify this to take into account each SVGElement's transform.**
-
-##### Part 2: Viewing Transform
-
-Notice the staff reference solution supports image pan and zoom behavior (drag the mouse to pan, use the scroll wheel to zoom). To implement this functionality in your solution, you will need to implement `ViewportImp::set_viewbox()` in `viewport.cpp`.
-
-A viewport defines a region of the SVG canvas that is visible in the app. The 3 properties we care about here are `centerX`, `centerY` and `vspan` (vertical span). They are all defined in svg coordinate space.
-
-When the application initially launches, the entire canvas is in view. For example, if the SVG canvas is of size 400x300, then the viewport will initially be centered on the canvas, and have a vertical field of view that spans the entire canvas. Specifically, the member values of the `Viewport` class will look like: `centerX=200, centerY=150`, and `vspan` is some number`>=150`.
-
-When user actions require the viewport be changed, the application will call `update_viewbox()` with the appropriate parameters. Given this change in view parameters, you should implement `set_viewbox()` to compute and set transform `svg_2_norm` (by calling `set_svg_2_norm`) based on the new view parameters. This transform, which involves translation and scaling, should map the SVG canvas coordinate space to a normalized device coordinate space where the top left of the visible SVG coordinate maps to `(0, 0)` and the bottom right maps to `(1, 1)`. For example, for the values `centerX=200, centerY=150, vspan=10`, then SVG canvas coordinate `(200, 150)` transforms to normalized coordinate `(0.5, 0.5)` (center of screen) and canvas coordinate `(200, 160)` transforms to `(0.5, 1)` (bottom center).
-
-Once you have correctly implemented `set_viewbox()`, your solution will respond to mouse pan and zoom in the same way as the reference implementation.
-
-#### Task 6: Drawing Scaled Images
 
 **This part of the assignment requires knowledge of concepts in Lecture _Perspective Projection and Texture Mapping_.**
 
@@ -323,7 +214,7 @@ To keep things very simple, we are going to constrain this problem to rasterizin
 
 When you are done, you should be able to draw `basic/test7.svg`.
 
-#### Task 7: Anti-Aliasing Image Elements Using Trilinear Filtering
+#### Anti-Aliasing Image Elements Using Trilinear Filtering
 
 **This part of the assignment requires knowledge of concepts in Lecture _Perspective Projection and Texture Mapping_.**
 
@@ -337,7 +228,7 @@ The program only stores a single set of mipmaps for each image, so the `rasteriz
 
 At this point, zooming in and out of your image should produce nicely filtered results! To test this functionality, try zooming out on `basic/test7.svg`.
 
-#### Task 8: Alpha Compositing
+#### Alpha Compositing
 
 Up until this point your renderer was not able to properly draw semi-transparent elements. Therefore, your last programming task in this assignment is to modify your code to implement [Simple Alpha Blending](http://www.w3.org/TR/SVGTiny12/painting.html#CompositingSimpleAlpha) in the SVG specification.
 
@@ -441,6 +332,76 @@ For convenience, `drawsvg` can also accept a path to a directory that contains m
 ```
 
 The application will load up to nine files from that path and each file will be loaded into a tab. You can switch to a specific tab using keys 1 through 9.
+
+# Project Structure
+
+```
+📁DrawSVG
+├─ 💬.gitignore
+├─ 📁.vs
+├─ 📁.vscode
+│  ├─ 📁clang
+│  ├─ 📁gcc
+│  ├─ 📊launch.json
+│  ├─ 📁msvc
+│  ├─ 📊settings.json
+│  └─ 📊tasks.json
+├─ 📁CMakeFiles
+├─ 💬CMakeLists.txt
+├─ 📁CMU462
+├─ 📁doc
+├─ 💻drawsvg.sln
+├─ 📁image
+│  └─ 📁README
+├─ 📁misc
+├─ 💬README.md
+├─ 💻runcmake_win.bat
+├─ 📁src
+│  ├─ 📁cmake
+│  │  └─ 📁modules
+│  │     ├─ 💻FindCMU462.cmake
+│  │     ├─ 💻FindGLEW.cmake
+│  │     └─ 💻FindGLFW.cmake
+│  ├─ 📁CMakeFiles
+│  ├─ 💬CMakeLists.txt
+│  ├─ 📁dirent
+│  │  ├─ © dirent.c
+│  │  └─ © dirent.h
+│  ├─ © drawsvg.cpp
+│  ├─ © drawsvg.h
+│  ├─ 📁hardware
+│  │  ├─ hardware.cmake
+│  │  └─ hardware_renderer.cpp
+│  ├─ © hardware_renderer.h
+│  ├─ © main.cpp
+│  ├─ © png.cpp
+│  ├─ © png.h
+│  ├─ 📁reference
+│  │  ├─ 💻drawsvg_ref.lib
+│  │  ├─ 💻libdrawsvgref.a
+│  │  ├─ 💻libdrawsvgref_old.a
+│  │  ├─ 💻libdrawsvgref_osx.a
+│  │  └─ 💻reference.cmake
+│  ├─ © software_renderer.cpp
+│  ├─ © software_renderer.h
+│  ├─ © svg.cpp
+│  ├─ © svg.h
+│  ├─ © svg_renderer.h
+│  ├─ © texture.cpp
+│  ├─ © texture.h
+│  ├─ © triangulation.cpp
+│  ├─ © triangulation.h
+│  ├─ © viewport.cpp
+│  └─ © viewport.h
+├─ 📁svg
+│  ├─ 🎨alpha
+│  ├─ 🎨basic
+│  ├─ 🎨hardcore
+│  ├─ 🎨illustration
+│  └─ 🎨subdiv
+└─ 💻 win_clean.bat
+
+```
 
 # Resources and Notes
 

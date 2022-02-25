@@ -80,7 +80,7 @@ namespace CMU462
 		// Task 5 (part 1):
 		// Modify this to implement the transformation stackS
 		Matrix3x3 Temp = transformation;
-		transformation = transformation * element->transform;
+		//transformation = transformation * element->transform;
 		switch (element->type)
 		{
 		case POINT:

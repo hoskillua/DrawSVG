@@ -4,7 +4,7 @@
 
 # Overview
 
-A simple interactive program that renders SVG files, it draws points, lines, triangles, and bitmap images. The code skeleton was provided by [cmu's introduction to computer garphics course](http://15462.courses.cs.cmu.edu/fall2021/) so I implemented algorithms for rasterizing primitives efficiently. It supports multisampling, transformations, viewport navigation & alpha blending. To see build instructions, scroll down to the bottom of this readme.
+A simple interactive program that renders SVG files, it draws points, lines, triangles, and bitmap images. The code skeleton was provided by [cmu's introduction to computer garphics course](http://15462.courses.cs.cmu.edu/fall2021/) so I implemented algorithms for rasterizing primitives efficiently. It supports supersampling, transformations, viewport navigation & alpha blending. To see build instructions, scroll down to the bottom of this readme.
 
 ### Summary of Viewer Controls
 
@@ -36,7 +36,7 @@ Other controls:
 
 # Features and Results
 
-#### Pipeline
+### Pipeline
 
 ![Pipeline](misc/pipeline.png?raw=true)
 
@@ -49,8 +49,8 @@ Using OpenGL to implement `rasterize_point()`, `rasterize_line()`, and `rasteriz
 For all of the other features, all of them were implemented **without OpenGL**. So the rasterization algorithms were impelemented from scratch.
 
 <div align="center">
-<img src="./doc/readme/Hardware0.JPG" style="Height: 250px" alt="Hardware SVG">
-<img src="./doc/readme/Hardware1.JPG" style="Height: 250px" alt="Hardware Rasterized">
+<img src="./image/README/Hardware0.JPG" style="Height: 330px" alt="Hardware SVG">
+<img src="./image/README/Hardware1.JPG" style="Height: 330px" alt="Hardware Rasterized">
 </div>
 
 <div align="center">
@@ -62,17 +62,25 @@ For all of the other features, all of them were implemented **without OpenGL**. 
 
 By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
+<div align="center">
+<img src="./image/README/1645817018991.png" style="Width: 440px" alt="">
+</div>
+<div align="center">
+  <b>Bresenham vs Xiaolin Wu's line algorithm</b>
+</div>
+<br/>
+
 - Handling non-integer vertex coordinates passed to `rasterize_line()`.
 - Handling lines of any slope.
 - Performing work proportional to the length of the line (**O(n)**).
 - Supporting specifying a line width (by splitting into 2 traingles).
 - Variable width from start and end.
 - Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+  - **Bresenham's algorithm (shown in red above)** if anti-aliasing is false.
+  - **Xiaolin Wu's line algorithm (shown in blue above)** if anti-aliasing is true.
 
 <div align="center">
-<img src="./doc/readme/Lines0.JPG" style="Height: 500px" alt="Lines Bresenham">
+<img src="./image/README/Lines0.JPG" style="Height: 500px" alt="Lines Bresenham">
 </div>
 
 <div align="center">
@@ -81,7 +89,7 @@ By implementing the function `rasterize_line()` in `software_renderer.cpp`, Line
 <br/>
 
 <div align="center">
-<img src="./doc/readme/Lines1.JPG" style="Height: 500px" alt="Lines Xiaolin Wu">
+<img src="./image/README/Lines1.JPG" style="Height: 500px" alt="Lines Xiaolin Wu">
 </div>
 
 <div align="center">
@@ -90,11 +98,11 @@ By implementing the function `rasterize_line()` in `software_renderer.cpp`, Line
 <br/>
 
 <div align="center">
-<img src="./doc/readme/Lines2.JPG" style="Height: 500px" alt="Lines Variable End & Start Widthes">
+<img src="./image/README/Lines2.JPG" style="Height: 500px" alt="Lines Variable End & Start Widthes">
 </div>
 
 <div align="center">
-  <b>rendering <i>basic/test2.svg</i>: Variable End & Start Widthes (right)</b>
+  <b>rendering <i>basic/test2.svg</i>: Variable End & Start Widthes</b>
 </div>
 <br/>
 
@@ -102,23 +110,55 @@ TODO:
 
 ### Drawing Traingles
 
-By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
+By implementing `rasterize_triangle()` in `software_renderer.cpp` and creating a variety of helper functions, Triangles are rendered as follows:
 
-- Handling non-integer vertex coordinates passed to `rasterize_line()`.
-- Handling lines of any slope.
-- Performing work proportional to the length of the line (**O(n)**).
-- Supporting specifying a line width (by splitting into 2 traingles).
-- Variable width from start and end.
-- Supports two line drawing algorithms:
-  - **Bresenham's algorithm** if anti-aliasing is false.
-  - **Xiaolin Wu's line algorithm** if anti-aliasing is true.
+1. Get the bounding box of the triangle
+2. recusively divide the box in the larger axis in half and check the resulting boxes:
+
+- if the box is smaller than given a threshold (i.e. <8x8): `simply check all pixels inside`
+- else:
+  - if the box is all in the he triangle: `fill without checking`
+  - if the box is all outside of the triangle: `do nothing`
+  - else: `step 2 (divide again)`
 
 <div align="center">
-<img src="./ReadmeGIFs/Dashboard.gif" alt="Dashboard GIF">
+<img src="./image/README/1645813224417.png" style="width: 600px" alt="recursive division">
 </div>
+<br/>
+
+Checked boxes for this approch look like this. It is clear that this algorithm is very efficient compared to the naive search in all pixels in the bounding box.
+
+**Below are some examples of rendered SVGs:**
 
 <div align="center">
-  <b>rendering <i>basic/test2.svg</i></b>
+<img src="./image/README/1645817354860.png" style="width: 320px" alt="Triangle Rasterization Example">
+<img src="./image/README/1645817460189.png" style="width: 320px" alt="Triangle + Line Rasterization Example">
+</div>
+<div align="center">
+  <b>Some example on Triangle Rasterization</b>
+</div>
+<br/>
+
+### Supersampling
+
+By implementing `resolve()` in `software_renderer.cpp` and modifying `rasterize_triangle()` & `rasterize_line()` , Supersampling is supported. Some notes:
+
+- Uniform sample positions.
+- Supersampling upto 16 samples/px.
+- A simple box filter is used to average samples.
+
+This was tested against extreme SVG files (in terms of numbers of triangles). It worked efficiently.
+
+<div align="center">
+<img src="./image/README/1645818657713.png" style="width: 354px" alt="1 sample/px">
+<img src="./image/README/1645818686023.png" style="width: 351px" alt="4 samples/px">
+</div>
+<div align="center">
+<img src="./image/README/1645818739146.png" style="width: 350px" alt="9 samples/px">
+<img src="./image/README/1645818759726.png" style="width: 355px" alt="16 samples/px">
+</div>
+<div align="center">
+  <b>Showing an extreme aliasing case and how it looks with different sampling rates</b>
 </div>
 <br/>
 
@@ -209,23 +249,6 @@ By implementing the function `rasterize_line()` in `software_renderer.cpp`, Line
   <b>rendering <i>basic/test2.svg</i></b>
 </div>
 <br/>
-
-#### Task 3: Drawing Triangles
-
-In this task, you will implement `rasterize_triangle()` in `software_renderer.cpp`.
-
-Your implementation should:
-
-- Sample triangle coverage using the methods discussed in Lecture _Drawing a Triangle_. While in Task 2 you were given choice in how you defined the outputs of line drawing, there is an exact solution to the problem of sampling triangle coverage. The position of screen sample points--at half-integer coordinates in screen space--was described above.
-- To receive full credit in Task 3 your implementation should assume that a sample point on a triangle edge is covered by the triangle. Your implementation **DOES NOT** need to respect the triangle "edge rules" to avoid "double counting" as discussed in class. (but we encourage you to try!)
-- Your implementation should use an algorithm that is more work efficient than simply testing all samples on screen. To receive full credit it should at least constrain coverage tests to samples that lie within a screen-space bounding box of the triangle. However, we encourage exploration of even more efficient implementations, such as ones that employ "early out" optimizations discussed in lecture.
-- When a triangle covers a sample, you should write the triangle's color to the location corresponding to this sample in `render_target`.
-
-Once you have successfully implemented triangle drawing, you will able to draw a large number of examples. When loading an SVG, the provided code triangulates convex polyhedra into a list of triangles for you, so by implementing support for rasterizing triangles, the viewer now supports drawing any of these shapes as well. (When parsing the SVG, we convert rectangles and polygons specified in the file into lists of triangles.)
-
-When you are done, you should be able to draw `basic/test3.svg`, `basic/test4.svg`, and `basic/test5.svg`.
-
-Note that the vertices may be in counter-clockwise or clockwise order when passed in. Using the cross-product to check orientation may be helpful.
 
 #### Task 4: Anti-Aliasing Using Supersampling
 
@@ -326,9 +349,9 @@ You will need to modify the parts of the code which write to the supersample buf
 
 When you are done, you should be able to correctly draw the tests in `/alpha`.
 
-#### Task 9: Draw Something!!!
+# Draw Something!!!
 
-Now that you have implemented a few basic features of the SVG format, it is time to get creative and draw something!
+_Below are the instrusctions for rendering your own SVG art in this application._
 
 You can create an SVG file in popular design tools like Adobe Illustrator or Inkscape and export SVG files, or use a variety of editors online. Since an SVG file is just an XML file, you could even use a text editor or write a script to generate the text!
 
@@ -339,28 +362,11 @@ To work around this, you should instead save it as an `Optimized SVG`. In the re
 
 If you're using Illustrator, and you get errors with opening your generated SVG file in DrawSVG, make sure your `<svg>` tag contains a `width` and `height` field, with set values. Look at the test case SVGs in the `svg/` folder for reference.
 
-Please name this file `task9.svg`.
-
-#### Going Further: Tasks that May Potentially Win You Extra Credit:
-
-##### Implement More Advanced Shapes
-
-We have provided you with a couple of examples of subdividing complex, smooth complex shapes into much simpler triangles in `/subdiv`. Subdivision is something you will dig into in great detail in the next assignment. You can see subdivision in action as you step though the test files we provided.
-
-In addition to what you have implemented already, the [SVG Basic Shapes](http://www.w3.org/TR/SVG/shapes.html) also include circles and ellipses. We may support these features by converting them to triangulated polygons. But if we zoom in on the edges, there will be a point at which the approximation breaks down and the image no longer will look like a smooth curve. Triangulating more finely can be costly as a large number of triangles may be necessary to get a good approximation. Is there a better way to sample these shapes? For example, implement `draw_ellipse` in `software_renderer.cpp` and `hardware/hardware_renderer.cpp` (2 pts).
-
-### Resources and Notes
-
-- [Rasterization Rules in Direct3D 11](<https://msdn.microsoft.com/en-us/library/windows/desktop/cc627092(v=vs.85).aspx>)
-- [Rasterization in OpenGL 4.0](https://www.opengl.org/registry/doc/glspec40.core.20100311.pdf#page=156)
-- [Bryce Summer's C++ Programming Guide](https://github.com/Bryce-Summers/Writings/blob/master/Programming%20Guides/C_plus_plus_guide.pdf)
-- [NeHe OpenGL Tutorials Lessons 01~05](http://nehe.gamedev.net/tutorial/lessons_01__05/22004/)
-
-### Build Instructions
+# Build Instructions
 
 In order to ease the process of running on different platforms, we will be using [CMake](http://www.cmake.org/) for our assignments. You will need a CMake installation of version 2.8+ to build the code for this assignment. It should also be relatively easy to build the assignment and work locally on Windows, OSX or 64-bit version of Linux. Building on ARM (e.g. Raspberry Pi, some Chromebooks) is currently not supported.
 
-#### VSCode Build Instructions (All Platforms)
+### VSCode Build Instructions (All Platforms)
 
 We recommend using [Visual Studio Code](https://code.visualstudio.com/download) on all platforms. Once you install CMake and VSCode, you will also need to install the C/C++ extension within VSCode.
 
@@ -378,7 +384,7 @@ Commonly used Hotkeys:
 - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> - Run Command
 - Right click to go to definition/declaration/references
 
-#### OS X/Linux Build Instructions
+### OS X/Linux Build Instructions
 
 If you are working on OS X and do not have CMake installed, we recommend installing it through [Homebrew](http://brew.sh/): `$ brew install cmake`. You may also need the freetype package `$ brew install freetype`.
 
@@ -394,7 +400,7 @@ $ make
 
 These steps (1) create an out-of-source build directory, (2) configure the project using CMake, and (3) compile the project. If all goes well, you should see an executable `drawsvg` in the build directory. As you work, simply typing `make` in the build directory will recompile the project.
 
-#### Windows Build Instructions using Visual Studio
+### Windows Build Instructions using Visual Studio
 
 We have a beta build support for Windows systems. You need to install the latest version of [CMake](http://www.cmake.org/) and install [Visual Studio Community](https://visualstudio.microsoft.com/vs/). After installing these programs, you can run `runcmake_win.bat` by double-clicking on it. This should create a `build` directory with a Visual Studio solution file in it named `drawsvg.sln`. You can double-click this file to open the solution in Visual Studio.
 
@@ -402,7 +408,7 @@ If you plan on using Visual Studio to debug your program, you can change `drawsv
 
 If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug` by clicking the Solution Configurations drop down menu on the top menu bar. Note that you will have to set `Command Arguments` again if you change the build mode.
 
-#### Windows Build Instructions Using CLion
+### Windows Build Instructions Using CLion
 
 (tested on CLion 2018.3)
 
@@ -435,3 +441,10 @@ For convenience, `drawsvg` can also accept a path to a directory that contains m
 ```
 
 The application will load up to nine files from that path and each file will be loaded into a tab. You can switch to a specific tab using keys 1 through 9.
+
+# Resources and Notes
+
+- [Rasterization Rules in Direct3D 11](<https://msdn.microsoft.com/en-us/library/windows/desktop/cc627092(v=vs.85).aspx>)
+- [Rasterization in OpenGL 4.0](https://www.opengl.org/registry/doc/glspec40.core.20100311.pdf#page=156)
+- [Bryce Summer's C++ Programming Guide](https://github.com/Bryce-Summers/Writings/blob/master/Programming%20Guides/C_plus_plus_guide.pdf)
+- [NeHe OpenGL Tutorials Lessons 01~05](http://nehe.gamedev.net/tutorial/lessons_01__05/22004/)

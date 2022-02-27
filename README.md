@@ -6,7 +6,7 @@
 
 A simple interactive program that renders SVG files, it draws points, lines, triangles, and bitmap images. The code skeleton was provided by [cmu's introduction to computer garphics course](http://15462.courses.cs.cmu.edu/fall2021/) so I implemented algorithms for rasterizing primitives efficiently. It supports supersampling, transformations, viewport navigation & alpha blending. To see build instructions, scroll down to the bottom of this readme.
 
-### Summary of Viewer Controls
+## Summary of Viewer Controls
 
 A table of all the keyboard controls in the **draw** application is provided below.
 
@@ -36,13 +36,13 @@ Other controls:
 
 # Features and Results
 
-### Pipeline
+## Pipeline
 
 ![Pipeline](misc/pipeline.png?raw=true)
 
 The program reads in an SVG and initiates the window via context setup. The SVG is then parsed into a set of primitives, and the `draw_elements` function is called on each SVG element, rasterizing the primitives to pixels in the sample buffer. Pixels in the sample buffer are then filtered in the `resolve` function and sent to the target buffer where they are displayed onscreen. The above diagram illustrates how each task falls into the pipeline. The sample buffer takes multiple samples per pixel, and adjacent pixels in the sample buffer are averaged together for each target buffer pixel.
 
-### Hardware Renderer
+## Hardware Renderer
 
 Using OpenGL to implement `rasterize_point()`, `rasterize_line()`, and `rasterize_triangle()` in `hardware/hardware_renderer.cpp`. to view rendered SVG's by this we simply run DrawSVG and press `h`.
 
@@ -58,7 +58,7 @@ For all of the other features, all of them were implemented **without OpenGL**. 
 </div>
 <br/>
 
-### Drawing Lines
+## Drawing Lines
 
 By implementing the function `rasterize_line()` in `software_renderer.cpp`, Lines are rendered while:
 
@@ -106,9 +106,7 @@ By implementing the function `rasterize_line()` in `software_renderer.cpp`, Line
 </div>
 <br/>
 
-TODO:
-
-### Drawing Traingles
+## Drawing Traingles
 
 By implementing `rasterize_triangle()` in `software_renderer.cpp` and creating a variety of helper functions, Triangles are rendered as follows:
 
@@ -139,7 +137,7 @@ Checked boxes for this approach look like this. It is clear that this algorithm 
 </div>
 <br/>
 
-### Supersampling
+## Supersampling
 
 By implementing `resolve()` in `software_renderer.cpp` and modifying `rasterize_triangle()` & `rasterize_line()` , Supersampling is supported. Some notes:
 
@@ -162,7 +160,7 @@ This was tested against extreme SVG files (in terms of numbers of triangles). It
 </div>
 <br/>
 
-### Transformations & Viewport Navigation
+## Transformations & Viewport Navigation
 
 By modifying `draw_svg()` and `draw_element()` `software_renderer.cpp`, Transformations take effect rendered:
 
@@ -197,29 +195,51 @@ By implementing `ViewportImp::set_viewbox()` in `viewport.cpp`, the following is
 </div>
 <br/>
 
-### Rendering Scaled Images
+## Rendering Scaled Images
+
+<div align="center">
+<img src="./image/README/1645954827182.png" style="height: 250px" alt="Original Image">
+<img src="./image/README/1645954797694.png" style="height: 250px" alt="Bilinear Interpolation">
+</div>
+<div align="center">
+<img src="./image/README/1645954838774.png" style="height: 240px" alt="Nearest Neigbor">
+</div>
+</div>
+<div align="center">
+Original Image -> Nearest Neigbor Interpolation Vs. Bilinear Interpolation
+</div>
+<br/>
+
+By implementing `rasterize_image()` in `software_renderer.cpp`, `sample_nearest()` & `sample_bilinear()` in `texture.cpp`. We can render images without aliasing in original size and zoomed in (larger dimensions).
 
 <div align="center">
 <img src="./image/README/1645952454793.png" style="width: 350px" alt="Nearest Neigbor">
-<img src="./image/README/1645952645386.png" style="width: 354px" alt="Bilinear Interpolation">
+<img src="./image/README/1645952645386.png" style="width: 353px" alt="Bilinear Interpolation">
 </div>
 <div align="center">
-  <b>rendering <i>basic/test7.svg</i>: Nearest Neigbor vs Bilinear Interpolation</b>
+  <b>rendering <i>basic/test7.svg</i>: Nearest Neigbor Vs. Bilinear Interpolation</b>
 </div>
 <div align="center">
-  The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes
+<img src="./image/README/1645952489805.png" style="width: 360px" alt="Nearest Neigbor">
+<img src="./image/README/1645952728667.png" style="width: 366px" alt="Bilinear Interpolation">
+</div>
+<div align="center">
+  <b>rendering <i>basic/test7.svg</i> Zoomed In: Nearest Neigbor Vs. Bilinear Interpolation</b>
+</div>
+<div align="center">
+ In both cases: The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes but is solved by Bilinear Interpolation.
 </div>
 <br/>
 
 <div align="center">
-<img src="./image/README/1645952526218.png" style="width: 350px" alt="Nearest Neigbor">
-<img src="./image/README/1645952614460.png" style="width: 351px" alt="Bilinear Interpolation">
+<img src="./image/README/1645952526218.png" style="width: 360px" alt="Nearest Neigbor">
+<img src="./image/README/1645952614460.png" style="width: 370px" alt="Trilinear Interpolation">
 </div>
 <div align="center">
-  <b>rendering <i>basic/test7.svg</i>: Nearest Neigbor vs Bilinear Interpolation</b>
+  <b>rendering <i>basic/test7.svg</i> Zoomed Out: Nearest Neigbor Vs. Trilinear Interpolation</b>
 </div>
 <div align="center">
-  The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes
+ The aliasing effect is obvious if we look at the + signs, some of them are - or | or completely gone. This is solved by Trilinear Interpolation.
 </div>
 <br/>
 
@@ -238,7 +258,7 @@ To keep things very simple, we are going to constrain this problem to rasterizin
 
 When you are done, you should be able to draw `basic/test7.svg`.
 
-### Anti-Aliasing Image Elements Using Trilinear Filtering
+## Anti-Aliasing Image Elements Using Trilinear Filtering
 
 **This part of the assignment requires knowledge of concepts in Lecture _Perspective Projection and Texture Mapping_.**
 
@@ -252,7 +272,7 @@ The program only stores a single set of mipmaps for each image, so the `rasteriz
 
 At this point, zooming in and out of your image should produce nicely filtered results! To test this functionality, try zooming out on `basic/test7.svg`.
 
-### Alpha Compositing
+## Alpha Compositing
 
 Up until this point your renderer was not able to properly draw semi-transparent elements. Therefore, your last programming task in this assignment is to modify your code to implement [Simple Alpha Blending](http://www.w3.org/TR/SVGTiny12/painting.html#CompositingSimpleAlpha) in the SVG specification.
 
@@ -281,7 +301,7 @@ If you're using Illustrator, and you get errors with opening your generated SVG 
 
 In order to ease the process of running on different platforms, we will be using [CMake](http://www.cmake.org/) for our assignments. You will need a CMake installation of version 2.8+ to build the code for this assignment. It should also be relatively easy to build the assignment and work locally on Windows, OSX or 64-bit version of Linux. Building on ARM (e.g. Raspberry Pi, some Chromebooks) is currently not supported.
 
-### VSCode Build Instructions (All Platforms)
+## VSCode Build Instructions (All Platforms)
 
 We recommend using [Visual Studio Code](https://code.visualstudio.com/download) on all platforms. Once you install CMake and VSCode, you will also need to install the C/C++ extension within VSCode.
 
@@ -299,7 +319,7 @@ Commonly used Hotkeys:
 - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> - Run Command
 - Right click to go to definition/declaration/references
 
-### OS X/Linux Build Instructions
+## OS X/Linux Build Instructions
 
 If you are working on OS X and do not have CMake installed, we recommend installing it through [Homebrew](http://brew.sh/): `$ brew install cmake`. You may also need the freetype package `$ brew install freetype`.
 
@@ -315,7 +335,7 @@ $ make
 
 These steps (1) create an out-of-source build directory, (2) configure the project using CMake, and (3) compile the project. If all goes well, you should see an executable `drawsvg` in the build directory. As you work, simply typing `make` in the build directory will recompile the project.
 
-### Windows Build Instructions using Visual Studio
+## Windows Build Instructions using Visual Studio
 
 We have a beta build support for Windows systems. You need to install the latest version of [CMake](http://www.cmake.org/) and install [Visual Studio Community](https://visualstudio.microsoft.com/vs/). After installing these programs, you can run `runcmake_win.bat` by double-clicking on it. This should create a `build` directory with a Visual Studio solution file in it named `drawsvg.sln`. You can double-click this file to open the solution in Visual Studio.
 
@@ -323,7 +343,7 @@ If you plan on using Visual Studio to debug your program, you can change `drawsv
 
 If you feel that your program is running slowly, you can also change the build mode to `Release` from `Debug` by clicking the Solution Configurations drop down menu on the top menu bar. Note that you will have to set `Command Arguments` again if you change the build mode.
 
-### Windows Build Instructions Using CLion
+## Windows Build Instructions Using CLion
 
 (tested on CLion 2018.3)
 
@@ -337,7 +357,7 @@ Fill in Program arguments, say, `./svg/basic`, then click Apply and close the po
 
 Now you should be able to click on the green run button on top right to run the project.
 
-### Using the Mini-SVG Viewer App
+## Using the Mini-SVG Viewer App
 
 When you have successfully built your code, you will get an executable named **drawsvg**. The **drawsvg** executable takes exactly one argument from the command line. You may load a single SVG file by specifying its path. For example, to load the example file `svg/basic/test1.svg` :
 

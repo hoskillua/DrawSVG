@@ -1,5 +1,5 @@
 <h1 align="center">
-  Draw SVG
+  DrawSVG
 </h1>
 
 # Overview
@@ -199,6 +199,30 @@ By implementing `ViewportImp::set_viewbox()` in `viewport.cpp`, the following is
 
 ### Rendering Scaled Images
 
+<div align="center">
+<img src="./image/README/1645952454793.png" style="width: 350px" alt="Nearest Neigbor">
+<img src="./image/README/1645952645386.png" style="width: 354px" alt="Bilinear Interpolation">
+</div>
+<div align="center">
+  <b>rendering <i>basic/test7.svg</i>: Nearest Neigbor vs Bilinear Interpolation</b>
+</div>
+<div align="center">
+  The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes
+</div>
+<br/>
+
+<div align="center">
+<img src="./image/README/1645952526218.png" style="width: 350px" alt="Nearest Neigbor">
+<img src="./image/README/1645952614460.png" style="width: 351px" alt="Bilinear Interpolation">
+</div>
+<div align="center">
+  <b>rendering <i>basic/test7.svg</i>: Nearest Neigbor vs Bilinear Interpolation</b>
+</div>
+<div align="center">
+  The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes
+</div>
+<br/>
+
 **This part of the assignment requires knowledge of concepts in Lecture _Perspective Projection and Texture Mapping_.**
 
 In this task, you will implement `rasterize_image()` in `software_renderer.cpp`.
@@ -214,7 +238,7 @@ To keep things very simple, we are going to constrain this problem to rasterizin
 
 When you are done, you should be able to draw `basic/test7.svg`.
 
-#### Anti-Aliasing Image Elements Using Trilinear Filtering
+### Anti-Aliasing Image Elements Using Trilinear Filtering
 
 **This part of the assignment requires knowledge of concepts in Lecture _Perspective Projection and Texture Mapping_.**
 
@@ -228,7 +252,7 @@ The program only stores a single set of mipmaps for each image, so the `rasteriz
 
 At this point, zooming in and out of your image should produce nicely filtered results! To test this functionality, try zooming out on `basic/test7.svg`.
 
-#### Alpha Compositing
+### Alpha Compositing
 
 Up until this point your renderer was not able to properly draw semi-transparent elements. Therefore, your last programming task in this assignment is to modify your code to implement [Simple Alpha Blending](http://www.w3.org/TR/SVGTiny12/painting.html#CompositingSimpleAlpha) in the SVG specification.
 

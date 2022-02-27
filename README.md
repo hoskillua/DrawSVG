@@ -178,6 +178,8 @@ The example shown below illustrates these two properties by creating artwork by 
 </div>
 <br/>
 
+<hr/>
+
 By implementing `ViewportImp::set_viewbox()` in `viewport.cpp`, the following is supported:
 
 <div align="center">
@@ -197,12 +199,14 @@ By implementing `ViewportImp::set_viewbox()` in `viewport.cpp`, the following is
 
 ## Rendering Scaled Images
 
+By implementing `rasterize_image()` in `software_renderer.cpp`, `sample_nearest()` & `sample_bilinear()` in `texture.cpp`. We can render images with anti-aliasing in original size and zoomed in (larger dimensions).
+
 <div align="center">
-<img src="./image/README/1645954827182.png" style="height: 250px" alt="Original Image">
-<img src="./image/README/1645954797694.png" style="height: 250px" alt="Bilinear Interpolation">
+<img src="./image/README/1645954827182.png" style="height: 200px" alt="Original Image">
+<img src="./image/README/1645954797694.png" style="height: 200px" alt="Bilinear Interpolation">
 </div>
 <div align="center">
-<img src="./image/README/1645954838774.png" style="height: 240px" alt="Nearest Neigbor">
+<img src="./image/README/1645954838774.png" style="height: 192px" alt="Nearest Neigbor">
 </div>
 </div>
 <div align="center">
@@ -210,7 +214,7 @@ Original Image -> Nearest Neigbor Interpolation Vs. Bilinear Interpolation
 </div>
 <br/>
 
-By implementing `rasterize_image()` in `software_renderer.cpp`, `sample_nearest()` & `sample_bilinear()` in `texture.cpp`. We can render images without aliasing in original size and zoomed in (larger dimensions).
+In this part Nearest Neigbor & Bilinear Sampling were implemented.
 
 <div align="center">
 <img src="./image/README/1645952454793.png" style="width: 350px" alt="Nearest Neigbor">
@@ -230,6 +234,17 @@ By implementing `rasterize_image()` in `software_renderer.cpp`, `sample_nearest(
  In both cases: The aliasing effect is obvious if we look at the + signs as they have different thicknesses and lengthes/widthes but is solved by Bilinear Interpolation.
 </div>
 <br/>
+
+<hr/>
+
+By Modifiying `rasterize_image()` in `software_renderer.cpp`, `sample_trilinear()` & `generate_mips()` in `texture.cpp`. We can render images with anti-aliasing in all different sizes.
+
+<div align="center">
+<img src="./image/README/1645995656273.png" style="height: 400px" alt="Trilinear Interpolation">
+</div>
+<br/>
+
+In this part Trilinear Interpolation and MIPs Generation were implemented.
 
 <div align="center">
 <img src="./image/README/1645952526218.png" style="width: 360px" alt="Nearest Neigbor">

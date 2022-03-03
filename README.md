@@ -133,7 +133,7 @@ Checked boxes for this approach look like this. It is clear that this algorithm 
 <img src="./image/README/1645817460189.png" style="width: 320px" alt="Triangle + Line Rasterization Example">
 </div>
 <div align="center">
-  <b>Some example on Triangle Rasterization</b>
+  <b>Some examples on Triangle Rasterization</b>
 </div>
 <br/>
 
